@@ -23,25 +23,29 @@ const CARDS = {
 // offers and trade nights in this browser; switching reloads the page as the other profile.
 const PROFILES = [
   {id:"jonah", name:"Jonah B", initials:"JB", suburb:"Marrickville", rating:4.9, trades:47, h:268,
-   tagline:"Modern alt arts and vintage holos", home:"holohall", follows:["dan"],
+   tagline:"Modern alt arts and vintage holos", home:"holohall", follows:["dan"], since:"2020", followers:143,
+   bio:"Trading most Thursdays at Holo Hall. Always after Evolving Skies alt arts, and happy to talk vintage.", badges:["Verified ID"],
    cards:{char:"trade", g1_9:"sell", gengar:"trade", leaf:"trade", g1_143:"own", pika:"own", g1_149:"trade", g1_65:"sell"},
    vars:{char:"psa9", g1_9:"unl", gengar:"raw", leaf:"raw", g1_143:"shadow", pika:"raw", g1_149:"unl", g1_65:"shadow"},
    wants:["umb","glac","gira","esp","g1_6","jolt"]},
   {id:"ella", name:"Ella M", initials:"EM", suburb:"Newtown", rating:5.0, trades:18, h:330,
-   tagline:"Vintage Base Set and Eeveelutions", home:"holohall", follows:["tom","lena"],
+   tagline:"Vintage Base Set and Eeveelutions", home:"holohall", follows:["tom","lena"], since:"2022", followers:67,
+   bio:"Building a Base Set binder one Shadowless holo at a time. Will trade modern cards toward vintage.", badges:["Verified ID"],
    cards:{leaf:"trade", g1_65:"sell", g1_130:"trade", g1_2:"own", g1_94:"trade", mew:"sell", vapo:"own"},
    vars:{leaf:"raw", g1_65:"shadow", g1_130:"unl", g1_2:"first", g1_94:"unl", mew:"raw", vapo:"psa9"},
    wants:["g1_6","g1_150","g1_3","sylv","umb"]},
   {id:"chris", name:"Chris L", initials:"CL", suburb:"Parramatta", rating:4.7, trades:92, h:24,
-   tagline:"Graded modern, trades most weekends", home:"topdeck", follows:["marcus","dan"],
+   tagline:"Graded modern, trades most weekends", home:"topdeck", follows:["marcus","dan"], since:"2018", followers:380,
+   bio:"Mostly PSA 9 and 10 modern. At Top Deck most Fridays and happy to meet anywhere in western Sydney.", badges:["Verified ID","Ships same day"],
    cards:{char:"trade", g1_9:"trade", gengar:"trade", pika:"sell", esp:"own", g1_149:"sell", jolt:"own"},
    vars:{char:"psa9", g1_9:"unl", gengar:"raw", pika:"psa10", esp:"raw", g1_149:"shadow", jolt:"raw"},
    wants:["umb","ray","lugia","gira","g1_6"]}
 ];
 const PROFILE_KEY = "binderloop.profile";
 const PROFILE = (()=>{ let id=null; try{ id=localStorage.getItem(PROFILE_KEY); }catch(e){} return PROFILES.find(p=>p.id===id) || PROFILES[0]; })();
-// storage key for the signed-in profile; the first profile keeps the original keys so data saved before profiles still loads
-const pkey = k => PROFILE===PROFILES[0] ? k : k+"@"+PROFILE.id;
+// storage key for a profile; the first profile keeps the original keys so data saved before profiles still loads
+const pkeyFor = (p,k) => p===PROFILES[0] ? k : k+"@"+p.id;
+const pkey = k => pkeyFor(PROFILE,k);
 const me = {
   name:PROFILE.name, initials:PROFILE.initials, suburb:PROFILE.suburb, rating:PROFILE.rating, trades:PROFILE.trades, h:PROFILE.h,
   cards:Object.assign({}, PROFILE.cards), wants:PROFILE.wants.slice()
@@ -257,9 +261,27 @@ GEN1.forEach(([dex,name,type,set,rar,val,hue])=>{
   CARDS["g1_"+dex] = {n:name, s:set+" · "+rar, v:val, h:hue, dex, type, rar, set};
 });
 CARDS.g1_68.s += " · price estimate";
+// cards any demo profile listed from the catalogue, so saved binders (yours and the other profiles') keep them
+PROFILES.forEach(p=>{
+  try{ const s=JSON.parse(localStorage.getItem(pkeyFor(p,"binderloop.customcards.v1"))||"null");
+    if(s&&typeof s==="object") Object.keys(s).forEach(k=>{ if(k.indexOf("c_")===0&&s[k]&&s[k].cid&&!CARDS[k]) CARDS[k]=s[k]; }); }catch(e){}
+});
+// the other demo profiles are collectors too, showing the binder and want list they last saved in this browser
+PROFILES.filter(p=>p!==PROFILE).forEach(p=>{
+  let s=null; try{ s=JSON.parse(localStorage.getItem(pkeyFor(p,"binderloop.web.sell.v1"))||"null"); }catch(e){}
+  if(!s||typeof s!=="object") s={};
+  const src=s.cards&&typeof s.cards==="object"?s.cards:p.cards, cards={}, vars={};
+  for(const k in src) if(CARDS[k]&&["own","trade","sell"].includes(src[k])) cards[k]=src[k];
+  const sv=Object.assign({}, p.vars, s.vars&&typeof s.vars==="object"?s.vars:{});
+  for(const k in cards) if(sv[k]&&variantsFor(k).some(v=>v.id===sv[k])) vars[k]=sv[k];
+  const wants=(Array.isArray(s.wants)?s.wants:p.wants).filter(k=>CARDS[k]);
+  USERS.push({id:p.id, demo:true, name:p.name, initials:p.initials, suburb:p.suburb, rating:p.rating, trades:p.trades, h:p.h,
+    focus:p.tagline, since:p.since, followers:p.followers, bio:p.bio, badges:p.badges, cards, vars, wants});
+});
 // give collectors some vintage depth so search shows real owners
 const pick=(seed,n)=>{const out=[];let x=seed;for(let i=0;i<n;i++){x=(x*1103515245+12345)%2147483647;out.push("g1_"+(Math.abs(x)%151+1));}return [...new Set(out)];};
 USERS.forEach((u,i)=>{
+  if(u.demo) return;
   pick(i*977+13,5).forEach((k,j)=>{ if(!u.cards[k]) u.cards[k] = j===0?"sell":j<3?"trade":"own"; });
   pick(i*613+29,3).forEach(k=>{ if(!u.wants.includes(k) && !u.cards[k]) u.wants.push(k); });
 });
@@ -294,7 +316,7 @@ const VARSEED = {
   sam:{g1_115:"first",g1_149:"shadow",flare:"raw",g1_68:"unl"}
 };
 USERS.forEach((u,i)=>{
-  u.vars = Object.assign({}, VARSEED[u.id]||{});
+  u.vars = Object.assign({}, VARSEED[u.id]||{}, u.vars);
   let x = i*7919+31;
   const rnd=()=>{ x=(x*1103515245+12345)&0x7fffffff; return (x%1000)/1000; };
   Object.keys(u.cards).forEach(k=>{
@@ -1297,14 +1319,18 @@ function nightDetail(n){
     return `<button class="pchip" onclick="openCollector('${u.id}')">${av(u)}<span><b>${u.name}</b><em>${u.suburb}, rated ${u.rating}</em><span class="tag-row">${has.length?`<span class="tag hit">Bringing ${has.length} you want</span>`:""}${wants.length?`<span class="tag want">Wants ${wants.length} of yours</span>`:""}${!has.length&&!wants.length?`<span class="tag">No overlap yet</span>`:""}</span></span></button>`; }).join("")}</div></section>`;
   return h;
 }
+let peopleQ="";
 function peoplePage(){
-  const ranked=USERS.map(u=>({u,...overlap(u)})).sort((a,b)=>b.score-a.score);
-  return `<div class="people-grid">${ranked.map(({u,theyHave,theyWant,score})=>{ const owned=Object.keys(u.cards).sort((a,b)=>valOf(b,u.vars[b])-valOf(a,u.vars[a])), val=owned.reduce((t,k)=>t+valOf(k,u.vars[k]),0);
+  const q=peopleQ.trim().toLowerCase();
+  const ranked=USERS.filter(u=>!q||[u.name,u.suburb,u.focus].some(x=>x.toLowerCase().includes(q))).map(u=>({u,...overlap(u)})).sort((a,b)=>b.score-a.score);
+  return `<div class="bigsearch" style="margin-bottom:18px">${ic("search",20)}<input id="cq" placeholder="Search collectors by name, suburb or what they collect" autocomplete="off" value="${esc(peopleQ)}" aria-label="Search collectors" oninput="peopleQ=this.value;render()"></div>`
+    + (ranked.length?"":emptyBox(`No collectors match "${esc(peopleQ.trim())}"`,"Try a first name, like Ella, Jonah or Chris, or a suburb."))
+    + `<div class="people-grid">${ranked.map(({u,theyHave,theyWant,score})=>{ const owned=Object.keys(u.cards).sort((a,b)=>valOf(b,u.vars[b])-valOf(a,u.vars[a])), val=owned.reduce((t,k)=>t+valOf(k,u.vars[k]),0);
     return `<article class="person"><button class="person-b" onclick="openCollector('${u.id}')">
       <span class="pp-h">${av(u,"lg")}<span><b>${u.name}</b><em>${u.suburb}, rated ${u.rating} from ${u.trades} trades</em></span></span>
       <span class="pp-f">${esc(u.focus)}</span><span class="pp-m">${plural(owned.length,"card")} worth ${money(val)}. Collecting since ${u.since}.</span>
       <span class="pp-strip">${owned.slice(0,5).map(k=>`<span class="fw sm">${faceOf(k,u,{sm:true})}</span>`).join("")}${owned.length>5?`<span class="more">+${owned.length-5}</span>`:""}</span>
-      <span class="tag-row">${theyHave.length?`<span class="tag hit">${plural(theyHave.length,"card")} you want</span>`:""}${theyWant.length?`<span class="tag want">Wants ${theyWant.length} of yours</span>`:""}${score===0?`<span class="tag">No overlap yet</span>`:""}</span></button>
+      <span class="tag-row">${theyHave.length?`<span class="tag hit">${plural(theyHave.length,"card")} you want</span>`:""}${theyWant.length?`<span class="tag want">Wants ${theyWant.length} of yours</span>`:""}${score===0?`<span class="tag">No overlap yet</span>`:""}${u.demo?`<span class="tag">Demo login</span>`:""}</span></button>
       <button class="btn sm${followed.has(u.id)?"":" primary"}" aria-pressed="${followed.has(u.id)}" onclick="toggleFollow('${u.id}')">${followed.has(u.id)?"Following":"Follow"}</button></article>`; }).join("")}</div>`;
 }
 function toggleFollow(id){ followed.has(id)?followed.delete(id):followed.add(id); render(); }
