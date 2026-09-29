@@ -44,7 +44,7 @@ function variantsFor(k){
 /* ---------- materializing a catalogue card into a real, persistent CARDS entry ---------- */
 // one catalogue card = one CARDS entry (print/grade is still picked via me.vars[k], same as the
 // original 168). "c_"+catalogueId is deterministic, so re-picking the same card never duplicates it.
-const CUSTOM_KEY = "binderloop.customcards.v1";
+const CUSTOM_KEY = pkey("binderloop.customcards.v1");
 let CUSTOM_CARDS = {};
 (function loadCustomCards(){
   try{
@@ -71,7 +71,7 @@ function resolveOrCreateCard(catalogId, marketValue){
 /* ---------- sealed-product selling ----------
    Kept deliberately simple: quantity and a price, no print/grade, no buyer
    matching or trade offers (those only apply to card-for-card swaps here). */
-const SEAL_KEY = "binderloop.sealedsell.v1";
+const SEAL_KEY = pkey("binderloop.sealedsell.v1");
 let SEALSELL = {items:{}, sold:[]};
 (function loadSealSell(){
   try{
