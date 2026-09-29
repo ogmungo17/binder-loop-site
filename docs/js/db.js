@@ -4,7 +4,7 @@
    the Database page opens. Stock comes from the marketplace data and from
    anything added or imported here (saved in this browser). Loaded after app.js.
    ===================================================================== */
-const DB_KEY = "binderloop.db.v1";
+const DB_KEY = pkey("binderloop.db.v1");
 const DB_TYPES = {single:"Single", sealed:"Sealed", slab:"Slab"};
 const SLAB_GRADES = [10, 9, 8];                    // PSA 10 down to PSA 8, nothing lower
 const GRADE_MULT = {10:4.2, 9:1.9, 8:1.4};         // PSA 10 and 9 match the marketplace; PSA 8 is an estimate

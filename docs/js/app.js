@@ -19,10 +19,32 @@ const CARDS = {
   pidg:{n:"Pidgeot V",s:"Lost Origin · Full art",v:3.82,h:34}
 };
 // status: own (not available) | trade | sell | want
+// Demo profiles: three logins for showing the site in store. Each keeps its own binder, listings,
+// offers and trade nights in this browser; switching reloads the page as the other profile.
+const PROFILES = [
+  {id:"jonah", name:"Jonah B", initials:"JB", suburb:"Marrickville", rating:4.9, trades:47, h:268,
+   tagline:"Modern alt arts and vintage holos", home:"holohall", follows:["dan"],
+   cards:{char:"trade", g1_9:"sell", gengar:"trade", leaf:"trade", g1_143:"own", pika:"own", g1_149:"trade", g1_65:"sell"},
+   vars:{char:"psa9", g1_9:"unl", gengar:"raw", leaf:"raw", g1_143:"shadow", pika:"raw", g1_149:"unl", g1_65:"shadow"},
+   wants:["umb","glac","gira","esp","g1_6","jolt"]},
+  {id:"ella", name:"Ella M", initials:"EM", suburb:"Newtown", rating:5.0, trades:18, h:330,
+   tagline:"Vintage Base Set and Eeveelutions", home:"holohall", follows:["tom","lena"],
+   cards:{leaf:"trade", g1_65:"sell", g1_130:"trade", g1_2:"own", g1_94:"trade", mew:"sell", vapo:"own"},
+   vars:{leaf:"raw", g1_65:"shadow", g1_130:"unl", g1_2:"first", g1_94:"unl", mew:"raw", vapo:"psa9"},
+   wants:["g1_6","g1_150","g1_3","sylv","umb"]},
+  {id:"chris", name:"Chris L", initials:"CL", suburb:"Parramatta", rating:4.7, trades:92, h:24,
+   tagline:"Graded modern, trades most weekends", home:"topdeck", follows:["marcus","dan"],
+   cards:{char:"trade", g1_9:"trade", gengar:"trade", pika:"sell", esp:"own", g1_149:"sell", jolt:"own"},
+   vars:{char:"psa9", g1_9:"unl", gengar:"raw", pika:"psa10", esp:"raw", g1_149:"shadow", jolt:"raw"},
+   wants:["umb","ray","lugia","gira","g1_6"]}
+];
+const PROFILE_KEY = "binderloop.profile";
+const PROFILE = (()=>{ let id=null; try{ id=localStorage.getItem(PROFILE_KEY); }catch(e){} return PROFILES.find(p=>p.id===id) || PROFILES[0]; })();
+// storage key for the signed-in profile; the first profile keeps the original keys so data saved before profiles still loads
+const pkey = k => PROFILE===PROFILES[0] ? k : k+"@"+PROFILE.id;
 const me = {
-  name:"Jonah B", initials:"JB", suburb:"Marrickville", rating:4.9, trades:47, h:268,
-  cards:{char:"trade", g1_9:"sell", gengar:"trade", leaf:"trade", g1_143:"own", pika:"own", g1_149:"trade", g1_65:"sell"},
-  wants:["umb","glac","gira","esp","g1_6","jolt"]
+  name:PROFILE.name, initials:PROFILE.initials, suburb:PROFILE.suburb, rating:PROFILE.rating, trades:PROFILE.trades, h:PROFILE.h,
+  cards:Object.assign({}, PROFILE.cards), wants:PROFILE.wants.slice()
 };
 const USERS = [
   {id:"marcus",name:"Marcus T",initials:"MT",suburb:"Parramatta",rating:4.9,trades:63,h:200,
@@ -261,8 +283,7 @@ function vchipOwner(k,o){ return vchip(k, o.vars ? o.vars[k] : undefined); }
 const sumV = (set,owner)=>set.reduce((t,k)=>t+valOf(k,owner.vars[k]),0);
 
 // every holding is a specific printing, not just a Pokemon
-me.vars = {char:"psa9", g1_9:"unl", gengar:"raw", leaf:"raw", g1_143:"shadow",
-           pika:"raw", g1_149:"unl", g1_65:"shadow"};
+me.vars = Object.assign({}, PROFILE.vars);
 const VARSEED = {
   marcus:{umb:"psa9",sylv:"raw",jolt:"raw",flare:"raw",vapo:"psa9",mew:"raw"},
   aisha:{glac:"psa10",lugia:"raw",tyra:"raw",pidg:"raw",pika:"psa9"},
@@ -324,7 +345,7 @@ function km(a,b){
   return 2*6371*Math.asin(Math.sqrt(x));
 }
 const kmTxt = d => d<1 ? "under 1 km" : d.toFixed(1)+" km";
-let homeStore = "holohall";
+let homeStore = PROFILE.home;
 function bestStoreFor(u){
   return STORES.slice().sort((a,b)=>{
     const cost=s=>Math.max(km(me,s),km(u,s)) + 0.1*(km(me,s)+km(u,s)) - (s.id===homeStore?1:0);
@@ -448,8 +469,8 @@ function nightFromKey(key){
 }
 // your plans: {going: true|false|null, bring:[cardKeys], seek:[cardKeys]}
 let NIGHTS = {};
-try{ NIGHTS = JSON.parse(localStorage.getItem("binderloop.nights")||"{}") || {}; }catch(e){ NIGHTS = {}; }
-function saveNights(){ try{ localStorage.setItem("binderloop.nights", JSON.stringify(NIGHTS)); }catch(e){} }
+try{ NIGHTS = JSON.parse(localStorage.getItem(pkey("binderloop.nights"))||"{}") || {}; }catch(e){ NIGHTS = {}; }
+function saveNights(){ try{ localStorage.setItem(pkey("binderloop.nights"), JSON.stringify(NIGHTS)); }catch(e){} }
 function nightPlan(key){
   const p = NIGHTS[key];
   if(!p) return {going:null,bring:[],seek:[]};
@@ -478,7 +499,7 @@ const diffText = d=>d===0?"at market value":d<0?`${-d}% under market`:`${d}% ove
 
 /* ---------- messages: offers and negotiations ---------- */
 // Every offer, request and negotiation is a thread. Other people's replies are simulated (no backend in this prototype).
-const HR=3600e3, OKEY="binderloop.offers.v1", OPEN_ST=["open","agreed"];
+const HR=3600e3, OKEY=pkey("binderloop.offers.v1"), OPEN_ST=["open","agreed"];
 let OFFERS=[], threadId=null, draft=null, offerFor=null, offerPrice=null;
 const cardNames = ks=>ks.map(k=>CARDS[k].n).join(" + ");
 const thread = id=>OFFERS.find(o=>o.id===id);
@@ -523,7 +544,7 @@ function seedOffers(){
   // A. Marcus has made an offer for your Leafeon VMAX (your reply needed)
   let give=["leaf"], get=["jolt"], cash=balanceCash("marcus",give,get);
   out.push(mk({type:"trade",party:"marcus",give,get,cash,loc:"holohall",turn:"me",unread:true,created:now-3*HR,expires:now+45*HR,
-    messages:[{t:now-3*HR,from:"them",text:"Hey Jonah! I'm one card off finishing my Eeveelution alt arts and it's your Leafeon VMAX. Would you take my Jolteon VMAX plus cash on top? Happy to do it at Holo Hall on Thursday.",terms:{give,get,cash}}]}));
+    messages:[{t:now-3*HR,from:"them",text:`Hey ${me.name.split(" ")[0]}! I'm one card off finishing my Eeveelution alt arts and it's your Leafeon VMAX. Would you take my Jolteon VMAX plus cash on top? Happy to do it at Holo Hall on Thursday.`,terms:{give,get,cash}}]}));
   // B. You've offered Dan your Charizard VMAX for his Giratina V (waiting on him)
   give=["char"]; get=["gira"]; cash=balanceCash("dan",give,get);
   out.push(mk({type:"trade",party:"dan",give,get,cash,loc:"topdeck",turn:"them",created:now-20*HR,expires:now+28*HR,
@@ -548,9 +569,10 @@ function seedOffers(){
   out.push(mk({type:"trade",party:"tom",give,get,cash,loc:"holohall",status:"declined",turn:null,created:now-4*24*HR,expires:now-2*24*HR,
     messages:[
       {t:now-4*24*HR,from:"me",text:"Hi Tom, Gengar VMAX for your Giratina V, with me adding cash?",terms:{give,get,cash}},
-      {t:now-3.5*24*HR,from:"them",text:"Thanks Jonah, but I'm holding out for a Snorlax and not moving the Giratina otherwise. Good luck!"},
+      {t:now-3.5*24*HR,from:"them",text:`Thanks ${me.name.split(" ")[0]}, but I'm holding out for a Snorlax and not moving the Giratina otherwise. Good luck!`},
       {t:now-3.5*24*HR,from:"sys",text:"Tom W declined the offer"}]}));
-  return out;
+  // each profile only gets the conversations its binder can back up
+  return out.filter(o=>o.give.every(k=>me.cards[k]) && o.get.every(k=>findParty(o.party).cards[k]));
 }
 (function initOffers(){
   const valid = o=>o&&o.id&&Array.isArray(o.messages)&&findParty(o.party)&&(o.give||[]).every(k=>CARDS[k])&&(o.get||[]).every(k=>CARDS[k]);
@@ -711,7 +733,7 @@ Object.values(CARDS).forEach(c=>{ c.s=c.s.replace(/ · /g,", "); });
 [...USERS,...STORES].forEach(p=>{ ["focus","bio","blurb"].forEach(f=>{ if(p[f]) p[f]=p[f].replace(/ — /g,", ").replace(/—/g,", "); }); });
 let IMG = {};   // card artwork data URIs, keyed by card key (filled in when the artwork pack is available)
 let swapLoc=null, buyLoc=null;
-const followed = new Set(["dan"]);
+const followed = new Set(PROFILE.follows);
 function overlap(u){
   const theyHave = avail(u).filter(k=>me.wants.includes(k));
   const theyWant = avail(me).filter(k=>u.wants.includes(k));
@@ -783,6 +805,30 @@ function notifyReply(note,id){ toast(note,id); render(); }
 function confirmModal(o){
   openModal(`<div class="mdl-c"><div class="tick">${ic("check",26)}</div><h2>${o.title}</h2><p>${o.msg}</p>
     <div class="mdl-actions">${o.primary?`<button class="btn primary" onclick="${o.primary[1]}">${o.primary[0]}</button>`:""}<button class="btn" onclick="closeModal()">${o.close||"Close"}</button></div></div>`,{label:o.title});
+}
+/* ---------- demo profiles: log in as one of three collectors ---------- */
+function openProfiles(){
+  openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left">
+    <h2>Log in</h2>
+    <p class="muted">Pick a demo profile. Each one keeps its own binder, listings, messages and trade nights in this browser.</p>
+    <div class="plist">${PROFILES.map(p=>`<button class="lrow prow${p===PROFILE?" on":""}" onclick="switchProfile('${p.id}')" ${p===PROFILE?'aria-current="true" data-autofocus':""}>${av(p)}<div><b>${esc(p.name)}</b><span>${esc(p.tagline)}, ${esc(p.suburb)}</span></div>${p===PROFILE?pill("Signed in"):ic("chev",16)}</button>`).join("")}</div>
+    <div class="mdl-actions left"><button class="btn" onclick="go('you','profile')">View ${esc(first(me))}'s profile</button><button class="btn" onclick="resetProfile()">Reset ${esc(first(me))}'s demo data</button></div></div>`,{label:"Log in"});
+}
+function switchProfile(id){
+  if(id===PROFILE.id){ go("home"); return; }
+  try{ localStorage.setItem(PROFILE_KEY,id); }catch(e){ toast("This browser won't save the profile, so it can't switch."); return; }
+  try{ history.replaceState(null,"","#/app/home"); }catch(e){}
+  location.reload();
+}
+// wipe the signed-in profile's saved data (theme and the other profiles are left alone), back to the sample state
+function resetProfile(){
+  if(!confirm(`Reset ${me.name}'s binder, listings, messages and trade nights to the demo defaults?`)) return;
+  try{
+    const mine = k => PROFILE===PROFILES[0] ? !k.includes("@") : k.endsWith("@"+PROFILE.id);
+    Object.keys(localStorage).filter(k=>k.startsWith("binderloop.") && k!==PROFILE_KEY && k!=="binderloop.web.theme" && mine(k)).forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+  try{ history.replaceState(null,"","#/app/home"); }catch(e){}
+  location.reload();
 }
 function offerSent(o,title,msg){ render(); confirmModal({title,msg,primary:["Open the conversation",`openThread('${o.id}')`]}); }
 
@@ -864,7 +910,7 @@ function appShell(){
       <button class="btn primary sellbtn" onclick="LD.k=null;openListCard(null)">${ic("tag",16)}<span>Sell a card</span></button>
       <button class="icon-btn" onclick="go('market','messages')" aria-label="Messages, ${need} need a reply">${ic("bell",19)}${need?`<span class="dot-n">${need}</span>`:""}</button>
       <button class="icon-btn" onclick="toggleTheme()" aria-label="Switch to ${isDark()?"light":"dark"} theme">${ic(isDark()?"sun":"moon",19)}</button>
-      <button class="me-chip" onclick="go('you','profile')">${av(me)}<span>${first(me)}</span></button>
+      <button class="me-chip" onclick="openProfiles()" aria-label="Signed in as ${esc(me.name)}. Switch profile">${av(me)}<span>${first(me)}</span></button>
     </header>
     <main class="page" id="page">${pageHTML()}</main>
   </div>
@@ -1476,7 +1522,7 @@ function profilePage(){
         <div class="ph-name"><h2>${me.name}</h2>${isPremium()?`<span class="prem-badge">${ic("spark",11)}Premium</span>`:""}<span class="tag hit">${ic("shield",12)}Verified trader</span></div>
         <div class="ph-stats"><span><b>${mine.length}</b> for sale</span><span><b>${sold.length}</b> sold</span><span><b>${me.trades}</b> trades</span><span><b>${me.rating}</b> rating</span><span><b>${followed.size}</b> following</span></div>
         <p class="ph-bio">Collector in ${me.suburb}. ${owned.length} cards in the binder, worth about ${money(Math.round(total))}. Usually at ${hs.name} on ${DOWS[hs.sched.dow]} nights.</p>
-        <div class="ph-acts"><button class="btn primary" onclick="LD.k=null;openListCard(null)">${ic("tag",15)}Sell a card</button><button class="btn" onclick="go('you','binder')">Manage binder</button><button class="btn" onclick="copyProfile()">${ic("ext",15)}Share profile</button></div>
+        <div class="ph-acts"><button class="btn primary" onclick="LD.k=null;openListCard(null)">${ic("tag",15)}Sell a card</button><button class="btn" onclick="go('you','binder')">Manage binder</button><button class="btn" onclick="copyProfile()">${ic("ext",15)}Share profile</button><button class="btn" onclick="openProfiles()">Switch profile</button></div>
       </div></section>
     <div class="pcols"><section class="pgrid-w">
       <div class="gtabs" role="tablist">${tabs.map(([id,l,n])=>`<button role="tab" aria-selected="${pGrid===id}" class="${pGrid===id?"on":""}" onclick="pGrid='${id}';render()">${ic(id==="sale"?"tag":id==="binder"?"grid":"check",15)}${l}<i>${n}</i></button>`).join("")}</div>
@@ -1514,7 +1560,7 @@ function binderPage(){
 /* =====================================================================
    Selling: your listings, the list-a-card flow, and saved binder state
    ===================================================================== */
-const SKEY="binderloop.web.sell.v1";
+const SKEY=pkey("binderloop.web.sell.v1");
 let SELL={ask:{},noTrade:{},sold:[]};
 (function initSell(){
   try{
@@ -1831,7 +1877,7 @@ function landing(){
   return `<div class="lp">
   <header class="lp-nav"><div class="lp-nav-in"><a class="brand" href="#/">${LOGO}<span>Binder Loop</span></a>
     <nav class="lp-links" aria-label="Site"><a href="#how" onclick="event.preventDefault();goLanding('how')">How it works</a><a href="#features" onclick="event.preventDefault();goLanding('features')">Buying and selling</a><a href="#nights" onclick="event.preventDefault();goLanding('nights')">Trade nights</a><a href="#stores" onclick="event.preventDefault();goLanding('stores')">For stores</a><a href="#faq" onclick="event.preventDefault();goLanding('faq')">Questions</a></nav>
-    <button class="btn primary" onclick="go('home')">Open the demo</button></div></header>
+    <div class="lp-nav-r"><button class="btn login" onclick="openProfiles()">${av(me,"xs")}Log in</button><button class="btn primary" onclick="go('home')">Open the demo</button></div></div></header>
 
   <section class="hero"><div class="hero-in">
     <div><h1>The local marketplace for Pokémon cards.</h1>

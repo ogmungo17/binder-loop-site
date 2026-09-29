@@ -110,6 +110,15 @@ Edition run but no Shadowless print offer Unlimited and 1st Edition only; everyt
 | `js/boot.js` | Starts the app once everything has loaded |
 | `database/`, `tools/` | Standalone data export and the scripts that build it (not needed on the live site) |
 
+## Demo profiles
+
+There are three logins for showing the site in a shop: **Jonah B** (Marrickville), **Ella M** (Newtown, vintage) and
+**Chris L** (Parramatta, graded modern). Use **Log in** on the landing page, click your name in the app's top bar, or
+**Switch profile** on the You page. There's no password. Each profile has its own binder, want list, listings, offers
+and trade nights, saved separately in this browser, so switching never mixes them. **Reset demo data** in the same
+dialog puts the signed-in profile back to its starting sample state before the next demo. Profiles are defined in
+`PROFILES` at the top of `js/app.js`.
+
 ## What is real and what is sample data
 
 - The collectors, listings, stores, trade nights and conversations are built-in sample data.

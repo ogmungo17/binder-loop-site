@@ -424,7 +424,9 @@ button.lrow:hover{background:var(--sunk)}
 .lp-nav .brand{padding:0}
 .lp-links{display:flex;gap:26px;margin-left:16px}
 .lp-links a{color:var(--navy-muted);text-decoration:none;font-weight:600;font-size:14.5px}.lp-links a:hover{color:#fff}
-.lp-nav .btn{margin-left:auto}
+.lp-nav-r{margin-left:auto;display:flex;gap:10px;align-items:center}
+.lp-nav .btn.login{background:transparent;color:var(--navy-ink);border-color:var(--navy-line);padding:5px 14px 5px 5px}
+.lp-nav .btn.login:hover{border-color:var(--navy-muted)}
 .hero{background:var(--navy);color:var(--navy-ink);position:relative;overflow:hidden}
 .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(800px 500px at 78% 30%,rgba(122,107,255,.32),transparent 70%),radial-gradient(600px 420px at 95% 90%,rgba(92,225,230,.18),transparent 70%);pointer-events:none}
 .hero-in{position:relative;max-width:1240px;margin:0 auto;padding:84px 32px 96px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:center}
@@ -678,3 +680,8 @@ button.lrow:hover{background:var(--sunk)}
 .dbhit b{font-weight:600;color:var(--ink)}.dbhit span{color:var(--muted);font-size:13px}
 .dbhint{font-size:13px;margin:4px 2px 0}
 @media (max-width:760px){.dbfilters .dbsel{max-width:none;flex:1 1 140px}}
+
+/* ---------- demo profile switcher ---------- */
+.plist{display:grid;gap:4px;margin-top:16px}
+.prow{border:1px solid transparent}
+.prow.on{border-color:var(--line);background:var(--sunk)}
