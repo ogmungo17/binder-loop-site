@@ -71,11 +71,11 @@ function catInit(d){
     CAT.setById[s.id] = s; CAT.setLookup.set(s.name.toLowerCase(), s.id); CAT.setLookup.set(s.id.toLowerCase(), s.id);
     if(s.code && codes[s.code.toLowerCase()]===1) CAT.setLookup.set(s.code.toLowerCase(), s.id);
   });
-  CAT.rar = d.rar; CAT.sup = d.sup; CAT.legacy = d.legacy || {}; CAT.rev = {};
+  CAT.rar = d.rar; CAT.sup = d.sup; CAT.typ = d.typ || [""]; CAT.typeHue = d.type_hue || {}; CAT.legacy = d.legacy || {}; CAT.rev = {};
   Object.keys(CAT.legacy).forEach(k => { CAT.rev[CAT.legacy[k]] = k; });
   CAT.cards = d.cards.map(r => {
     const s = CAT.sets[r[0]], rarity = CAT.rar[r[3]] || "";
-    const c = {id:r[7] || (s.id+"-"+r[1]), set:s, num:String(r[1]), name:r[2], rarity, sup:CAT.sup[r[4]], dex:r[5]||"", sub:r[6]||"", val:0};
+    const c = {id:r[8] || (s.id+"-"+r[1]), set:s, num:String(r[1]), name:r[2], rarity, sup:CAT.sup[r[4]], dex:r[5]||"", sub:r[6]||"", type:CAT.typ[r[7]]||"", val:0};
     c.hay = [c.name, s.name, s.id, s.code, c.num, rarity, c.sub, s.series, c.sup].join(" ").toLowerCase();
     c.nk = c.name.toLowerCase() + "|" + s.date + "|" + dbPad(c.num);
     c.sk = s.date + "|" + s.id + "|" + dbPad(c.num);

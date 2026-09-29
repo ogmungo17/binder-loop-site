@@ -705,7 +705,7 @@ function sendCounter(){
    Desktop site: helpers, card faces, router and shell
    ===================================================================== */
 const esc = s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const isHolo = k=>{ const c=CARDS[k]; return c.dex ? c.rar==="Holo rare" : true; };
+const isHolo = k=>{ const c=CARDS[k]; return isVintagePrint(c) ? c.rar==="Holo rare" : true; };
 const first = p=>p.name.split(" ")[0];
 Object.values(CARDS).forEach(c=>{ c.s=c.s.replace(/ · /g,", "); });
 [...USERS,...STORES].forEach(p=>{ ["focus","bio","blurb"].forEach(f=>{ if(p[f]) p[f]=p[f].replace(/ — /g,", ").replace(/—/g,", "); }); });
@@ -1552,12 +1552,21 @@ function ldSet(patch){ Object.assign(LD,patch); renderListModal(); }
 function ldVar(v){ const oldMarket=valOf(LD.k,LD.v), p=pctVs(LD.price,oldMarket); LD.v=v; LD.price=Math.max(1,Math.round(valOf(LD.k,v)*(1+p/100))); renderListModal(); }
 function renderListModal(){
   if(!LD.k){
+    if(CAT.state!=="ready"){
+      if(CAT.state!=="error") catLoad(()=>{ const m=$("#modal"); if(!LD.k && m && m.classList.contains("on")) renderListModal(); });
+      openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left"><h2>List an item for sale</h2>
+        ${CAT.state==="error"?emptyBox("Couldn't load the catalogue","The file data/catalog.js wasn't found.",`<button class="btn primary" onclick="dbRetryCatalog();renderListModal()">Try again</button>`)
+          :`<div class="empty" role="status"><b>Loading the catalogue…</b><p>About 20,000 cards. This only happens the first time.</p></div>`}</div>`,{label:"List an item"});
+      return;
+    }
     const owned=Object.keys(me.cards).sort((a,b)=>buyersFor(b).length-buyersFor(a).length||valOf(b,me.vars[b])-valOf(a,me.vars[a]));
     openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left">
-      <h2>List a card for sale</h2><p class="muted">Pick a card from your binder. You'll set the price next.</p>
-      <div class="pickgrid" style="margin-top:16px">${owned.map(k=>{ const on=me.cards[k]==="sell", n=buyersFor(k).length;
-        return `<button class="pickc" onclick="openListCard('${k}')"><span class="fw big">${faceOf(k,me)}</span><b>${CARDS[k].n}</b><span>${on?"Listed at "+money(askOf(k)):n?plural(n,"buyer")+" looking":money(valOf(k,me.vars[k]))}</span></button>`; }).join("")}</div>
-      <div class="mdl-actions left"><button class="btn" onclick="openAddCard()">${ic("plus",15)}Add a card to your binder first</button></div></div>`,{wide:true,label:"List a card"});
+      <h2>List an item for sale</h2><p class="muted">Search for any card or sealed product, or pick from your binder below.</p>
+      <div class="bigsearch" style="margin:14px 0">${ic("search",18)}<input id="psq" data-autofocus placeholder="Search any card or sealed product" autocomplete="off" oninput="psQuery(this.value)" aria-label="Search cards and sealed product"></div>
+      <div id="ps-res" class="dbres" style="margin-bottom:6px"></div>
+      ${owned.length?`<h3 class="sub">Your binder</h3><div class="pickgrid" style="margin-top:10px">${owned.map(k=>{ const on=me.cards[k]==="sell", n=buyersFor(k).length;
+        return `<button class="pickc" onclick="openListCard('${k}')"><span class="fw big">${faceOf(k,me)}</span><b>${CARDS[k].n}</b><span>${on?"Listed at "+money(askOf(k)):n?plural(n,"buyer")+" looking":money(valOf(k,me.vars[k]))}</span></button>`; }).join("")}</div>`:""}
+      <div class="mdl-actions left"><button class="btn" onclick="closeModal()">Cancel</button></div></div>`,{wide:true,label:"List an item"});
     return;
   }
   const k=LD.k, c=CARDS[k], market=valOf(k,LD.v), p=pctVs(LD.price,market), comps=comparables(k,LD.v), buyers=buyersFor(k), editing=me.cards[k]==="sell";
@@ -1605,7 +1614,7 @@ function sellPage(){
       <div class="stat"><b>${mine.length}</b><span>cards for sale</span></div>
       <div class="stat"><b>${money(total)}</b><span>total asking</span></div>
       <div class="stat"><b>${watchers}</b><span>buyers with your cards on their want list</span></div></div>
-    <div class="rbar"><h2>Your listings</h2><button class="btn primary" onclick="openListCard(null)">${ic("plus",16)}List a card</button></div>
+    <div class="rbar"><h2>Your listings</h2><button class="btn primary" onclick="openListCard(null)">${ic("plus",16)}List an item</button></div>
     ${mine.length?`<div class="tbl-wrap"><table class="tbl sellt"><thead><tr><th>Card</th><th class="num">Asking</th><th>Compared to market</th><th>Interested</th><th>Open to trades</th><th></th></tr></thead><tbody>
       ${mine.map(k=>{ const a=askOf(k), m=valOf(k,me.vars[k]), p=pctVs(a,m), b=buyersFor(k), comp=comparables(k,me.vars[k]||variantsFor(k)[0].id)[0];
         return `<tr><td><button class="tcell" onclick="openCard('${k}')"><span class="fw sm">${faceOf(k,me,{sm:true})}</span><span><b>${CARDS[k].n}</b><em>${vOf(k,me.vars[k]).label}, ${esc(CARDS[k].s)}</em></span></button></td>
@@ -1614,7 +1623,8 @@ function sellPage(){
           <td>${b.length?`<span class="stack">${b.slice(0,3).map(u=>av(u,"xs")).join("")}</span><em class="sub-t">${b.length} want it ${leadLink(k)}</em>`:`<span class="muted">Nobody yet</span>`}</td>
           <td><button class="fsw mini${SELL.noTrade[k]?"":" on"}" role="switch" aria-checked="${!SELL.noTrade[k]}" aria-label="Open to trade offers for ${esc(CARDS[k].n)}" onclick="toggleOpenTrade('${k}')"><i></i></button></td>
           <td class="acts"><button class="btn sm" onclick="openListCard('${k}')">Edit</button><button class="btn sm" onclick="markSold('${k}')">Mark as sold</button></td></tr>`; }).join("")}</tbody></table></div>`
-      :emptyBox("You're not selling anything yet","List a card from your binder and it shows up for buyers nearby.",`<button class="btn primary" onclick="openListCard(null)">List a card</button>`)}
+      :emptyBox("You're not selling anything yet","List a card or sealed product and it shows up for buyers nearby.",`<button class="btn primary" onclick="openListCard(null)">List an item</button>`)}
+    ${sealedSellSection()}
     <div class="two" style="margin-top:22px">
       <section class="panel"><div class="panel-h"><h2>People want these</h2><span class="muted">Cards in your binder with buyers nearby</span></div>
         ${ready.length?ready.slice(0,6).map(k=>{ const b=buyersFor(k); return `<div class="lrow"><span class="fw sm">${faceOf(k,me,{sm:true})}</span><div><b>${CARDS[k].n} ${vchipOf(k,me)}</b><span>${plural(b.length,"buyer")} looking, market ${money(valOf(k,me.vars[k]))}</span></div><button class="btn sm primary" onclick="openListCard('${k}')">List it</button></div>`; }).join(""):`<p class="muted">Nothing in your binder is on anyone's want list right now.</p>`}</section>

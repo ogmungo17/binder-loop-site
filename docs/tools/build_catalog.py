@@ -9,13 +9,20 @@ import glob, json, pathlib, re, sys, unicodedata, datetime
 src = pathlib.Path(sys.argv[1]); legacy = json.loads(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"))
 OUT = pathlib.Path(__file__).resolve().parent.parent / "data" / "catalog.js"
 
+TYPE_NORM = {"Colorless": "Normal", "Lightning": "Electric"}
+TYPE_HUE = {"Fire":16,"Fighting":22,"Rock":28,"Ground":32,"Normal":40,"Electric":48,"Bug":80,"Grass":110,
+  "Metal":150,"Ice":190,"Water":205,"Dragon":250,"Ghost":265,"Poison":285,"Psychic":300,"Fairy":330,"Darkness":350}
+
 sets = sorted(json.loads((src / "sets_en.json").read_text(encoding="utf-8")), key=lambda s: (s["releaseDate"], s["id"]))
 set_idx = {s["id"]: i for i, s in enumerate(sets)}
 cards = []
 for s in sets:
     p = src / "cards" / (s["id"] + ".json")
     for c in json.loads(p.read_text(encoding="utf-8")):
-        c["_set"] = s["id"]; cards.append(c)
+        c["_set"] = s["id"]
+        t = (c.get("types") or [None])[0]
+        c["_type"] = TYPE_NORM.get(t, t) or ""
+        cards.append(c)
 assert len({c["id"] for c in cards}) == len(cards), "duplicate card ids"
 
 # ---- lookup tables keep the file small
@@ -24,14 +31,16 @@ def table(values):
     for v in values: seen.setdefault(v, len(seen))
     return seen
 rar = table(c.get("rarity", "") for c in cards); sup = table(c["supertype"] for c in cards)
+typ_tbl = table(c["_type"] for c in cards)
 def number_key(n):
     m = re.match(r"^(\D*)(\d+)(.*)$", n); return (m.group(1), int(m.group(2)), m.group(3)) if m else (n, 0, "")
 rows = []
 for c in cards:
     dex = (c.get("nationalPokedexNumbers") or [0])[0]
     sub = (c.get("subtypes") or [""])[0]
-    row = [set_idx[c["_set"]], c["number"], c["name"], rar[c.get("rarity", "")], sup[c["supertype"]], dex, sub]
-    if c["id"] != c["_set"] + "-" + c["number"]: row.append(c["id"])      # a few cards share a printed number, so keep their real id
+    typ = typ_tbl[c["_type"]]
+    row = [set_idx[c["_set"]], c["number"], c["name"], rar[c.get("rarity", "")], sup[c["supertype"]], dex, sub, typ]
+    if c["id"] != c["_set"] + "-" + c["number"]: row.append(c["id"])
     rows.append(row)
 
 # ---- link the marketplace's cards to catalogue ids
@@ -63,7 +72,7 @@ data = {
   "v": 1, "built": datetime.date.today().isoformat(), "count": len(rows),
   "source": "PokemonTCG/pokemon-tcg-data (English cards). No prices or images included.",
   "sets": [[s["id"], s["name"], s["series"], s["releaseDate"].replace("/", "-"), s["total"], s.get("ptcgoCode", "")] for s in sets],
-  "rar": list(rar), "sup": list(sup), "cards": rows, "legacy": link,
+  "rar": list(rar), "sup": list(sup), "typ": list(typ_tbl), "type_hue": TYPE_HUE, "cards": rows, "legacy": link,
 }
 OUT.parent.mkdir(exist_ok=True)
 OUT.write_text("window.__CATALOG=" + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
