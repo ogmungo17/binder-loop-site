@@ -1,0 +1,91 @@
+﻿type,name,set,number,rarity,print,sealed_kind,pack_count,grade,qty,status,owner_name,owner_type,market_aud,total_market_aud,ask_aud,cert_number,value_basis,flags,note,source,card_id,tcgplayer_id,product_id,stock_id
+slab,Charizard VMAX,Shining Fates Shiny Vault,SV107,Rare Holo VMAX,,,,9,1,trade,Jonah B,me,370,370,,,multiplier,,,sample,swsh45sv-SV107,,G-swsh45sv-SV107-raw-PSA9,M-me-char
+single,Blastoise,Base Set,2,Rare Holo,Unlimited,,,,1,sell,Jonah B,me,328,328,328,,market,,,sample,base1-2,,S-base1-2-unl,M-me-g1_9
+single,Gengar VMAX,Fusion Strike,271,Rare Rainbow,Raw NM,,,,1,trade,Jonah B,me,1475,1475,,,market,,,sample,swsh8-271,,S-swsh8-271-raw,M-me-gengar
+single,Leafeon VMAX,Evolving Skies,205,Rare Rainbow,Raw NM,,,,1,trade,Jonah B,me,590,590,,,market,,,sample,swsh7-205,,S-swsh7-205-raw,M-me-leaf
+single,Snorlax,Jungle,11,Rare Holo,Shadowless,,,,1,own,Jonah B,me,527,527,,,multiplier,Shadowless is a Base Set print only,,sample,base2-11,,S-base2-11-shadow,M-me-g1_143
+single,Pikachu VMAX,Vivid Voltage,188,Rare Rainbow,Raw NM,,,,1,own,Jonah B,me,262,262,,,market,,,sample,swsh4-188,,S-swsh4-188-raw,M-me-pika
+single,Dragonite,Fossil,4,Rare Holo,Unlimited,,,,1,trade,Jonah B,me,272,272,,,market,,,sample,base3-4,,S-base3-4-unl,M-me-g1_149
+single,Alakazam,Base Set,1,Rare Holo,Shadowless,,,,1,sell,Jonah B,me,235,235,235,,multiplier,,,sample,base1-1,,S-base1-1-shadow,M-me-g1_65
+slab,Umbreon VMAX,Evolving Skies,215,Rare Rainbow,,,,9,1,trade,Marcus T,collector,6467,6467,,,multiplier,,,sample,swsh7-215,,G-swsh7-215-raw-PSA9,M-marcus-umb
+single,Sylveon VMAX,Evolving Skies,212,Rare Rainbow,Raw NM,,,,1,trade,Marcus T,collector,557,557,,,market,,,sample,swsh7-212,,S-swsh7-212-raw,M-marcus-sylv
+single,Jolteon VMAX,Evolving Skies,51,Rare Holo VMAX,Raw NM,,,,1,trade,Marcus T,collector,16,16,,,market,,,sample,swsh7-51,,S-swsh7-51-raw,M-marcus-jolt
+single,Flareon VMAX,Evolving Skies,18,Rare Holo VMAX,Raw NM,,,,1,own,Marcus T,collector,19,19,,,market,,,sample,swsh7-18,,S-swsh7-18-raw,M-marcus-flare
+slab,Vaporeon VMAX,Evolving Skies,30,Rare Holo VMAX,,,,9,1,own,Marcus T,collector,30,30,,,multiplier,,,sample,swsh7-30,,G-swsh7-30-raw-PSA9,M-marcus-vapo
+single,Mewtwo-GX,Shining Legends,76,Rare Rainbow,Raw NM,,,,1,own,Marcus T,collector,135,135,,,market,,,sample,sm35-76,,S-sm35-76-raw,M-marcus-mew
+single,Weepinbell,Jungle,48,Uncommon,Unlimited,,,,1,sell,Marcus T,collector,1,1,1,,market,,,sample,base2-48,,S-base2-48-unl,M-marcus-g1_70
+single,Venonat,Jungle,63,Common,Unlimited,,,,1,trade,Marcus T,collector,1,1,,,market,,,sample,base2-63,,S-base2-63-unl,M-marcus-g1_48
+single,Golem,Fossil,36,Uncommon,Shadowless,,,,1,trade,Marcus T,collector,6,6,,,multiplier,Shadowless is a Base Set print only,,sample,base3-36,,S-base3-36-shadow,M-marcus-g1_76
+single,Electrode,Jungle,2,Rare Holo,Unlimited,,,,1,own,Marcus T,collector,36,36,,,market,,,sample,base2-2,,S-base2-2-unl,M-marcus-g1_101
+single,Ponyta,Base Set,60,Common,Unlimited,,,,1,own,Marcus T,collector,1,1,,,market,,,sample,base1-60,,S-base1-60-unl,M-marcus-g1_77
+slab,Glaceon VMAX,Evolving Skies,209,Rare Rainbow,,,,10,1,trade,Aisha R,collector,1873,1873,,,multiplier,,,sample,swsh7-209,,G-swsh7-209-raw-PSA10,M-aisha-glac
+single,Lugia V,Silver Tempest,186,Rare Ultra,Raw NM,,,,1,trade,Aisha R,collector,752,752,,,market,,,sample,swsh12-186,,S-swsh12-186-raw,M-aisha-lugia
+single,Tyranitar V,Battle Styles,155,Rare Ultra,Raw NM,,,,1,trade,Aisha R,collector,363,363,,,market,,,sample,swsh5-155,,S-swsh5-155-raw,M-aisha-tyra
+single,Pidgeot V,Lost Origin,188,Rare Ultra,Raw NM,,,,1,sell,Aisha R,collector,4,4,4,,market,,,sample,swsh11-188,,S-swsh11-188-raw,M-aisha-pidg
+slab,Pikachu VMAX,Vivid Voltage,188,Rare Rainbow,,,,9,1,own,Aisha R,collector,498,498,,,multiplier,,,sample,swsh4-188,,G-swsh4-188-raw-PSA9,M-aisha-pika
+single,Weezing,Fossil,45,Uncommon,Unlimited,,,,1,sell,Aisha R,collector,3,3,3,,market,,,sample,base3-45,,S-base3-45-unl,M-aisha-g1_110
+single,Ekans,Fossil,46,Common,Shadowless,,,,1,trade,Aisha R,collector,1,1,,,multiplier,Shadowless is a Base Set print only,,sample,base3-46,,S-base3-46-shadow,M-aisha-g1_23
+single,Cubone,Jungle,50,Common,Unlimited,,,,1,trade,Aisha R,collector,3,3,,,market,,,sample,base2-50,,S-base2-50-unl,M-aisha-g1_104
+single,Butterfree,Jungle,33,Uncommon,1st Edition,,,,1,own,Aisha R,collector,8,8,,,multiplier,,,sample,base2-33,,S-base2-33-first,M-aisha-g1_12
+single,Slowpoke,Fossil,55,Common,Unlimited,,,,1,own,Aisha R,collector,1,1,,,market,,,sample,base3-55,,S-base3-55-unl,M-aisha-g1_79
+single,Giratina V,Lost Origin,186,Rare Ultra,Raw NM,,,,1,trade,Dan K,collector,1182,1182,,,market,,,sample,swsh11-186,,S-swsh11-186-raw,M-dan-gira
+single,Rayquaza VMAX,Evolving Skies,218,Rare Rainbow,Raw NM,,,,1,sell,Dan K,collector,1795,1795,1616,,market,,,sample,swsh7-218,,S-swsh7-218-raw,M-dan-ray
+single,Machamp,Base Set,8,Rare Holo,Unlimited,,,,1,sell,Dan K,collector,70,70,72,,estimate,,,sample,base1-8,,S-base1-8-unl,M-dan-g1_68
+single,Dragonite,Fossil,4,Rare Holo,Unlimited,,,,1,trade,Dan K,collector,272,272,,,market,,,sample,base3-4,,S-base3-4-unl,M-dan-g1_149
+single,Kangaskhan,Jungle,5,Rare Holo,Unlimited,,,,1,sell,Dan K,collector,31,31,31,,market,,,sample,base2-5,,S-base2-5-unl,M-dan-g1_115
+single,Alakazam,Base Set,1,Rare Holo,Unlimited,,,,1,sell,Dan K,collector,98,98,98,,market,,,sample,base1-1,,S-base1-1-unl,M-dan-g1_65
+single,Mewtwo,Base Set,10,Rare Holo,Unlimited,,,,1,sell,Dan K,collector,133,133,121,,market,,,sample,base1-10,,S-base1-10-unl,M-dan-g1_150
+single,Gloom,Jungle,37,Uncommon,Unlimited,,,,1,trade,Dan K,collector,1,1,,,market,,,sample,base2-37,,S-base2-37-unl,M-dan-g1_44
+single,Jigglypuff,Jungle,54,Common,1st Edition,,,,1,trade,Dan K,collector,8,8,,,multiplier,,,sample,base2-54,,S-base2-54-first,M-dan-g1_39
+single,Caterpie,Base Set,45,Common,Unlimited,,,,1,own,Dan K,collector,2,2,,,market,,,sample,base1-45,,S-base1-45-unl,M-dan-g1_10
+single,Chansey,Base Set,3,Rare Holo,Unlimited,,,,1,own,Dan K,collector,93,93,,,market,,,sample,base1-3,,S-base1-3-unl,M-dan-g1_113
+single,Espeon VMAX,Fusion Strike,270,Rare Rainbow,Raw NM,,,,1,trade,Priya S,collector,492,492,,,market,,,sample,swsh8-270,,S-swsh8-270-raw,M-priya-esp
+single,Vaporeon VMAX,Evolving Skies,30,Rare Holo VMAX,Raw NM,,,,1,trade,Priya S,collector,16,16,,,market,,,sample,swsh7-30,,S-swsh7-30-raw,M-priya-vapo
+single,Snorlax,Jungle,11,Rare Holo,Unlimited,,,,1,own,Priya S,collector,219,219,,,market,,,sample,base2-11,,S-base2-11-unl,M-priya-g1_143
+single,Pidgeot V,Lost Origin,188,Rare Ultra,Raw NM,,,,1,own,Priya S,collector,4,4,,,market,,,sample,swsh11-188,,S-swsh11-188-raw,M-priya-pidg
+single,Jigglypuff,Jungle,54,Common,1st Edition,,,,1,sell,Priya S,collector,8,8,7,,multiplier,,,sample,base2-54,,S-base2-54-first,M-priya-g1_39
+single,Raticate,Base Set,40,Uncommon,1st Edition,,,,1,trade,Priya S,collector,12,12,,,multiplier,,,sample,base1-40,,S-base1-40-first,M-priya-g1_20
+single,Chansey,Base Set,3,Rare Holo,Shadowless,,,,1,trade,Priya S,collector,222,222,,,multiplier,,,sample,base1-3,,S-base1-3-shadow,M-priya-g1_113
+single,Arcanine,Base Set,23,Uncommon,1st Edition,,,,1,own,Priya S,collector,16,16,,,multiplier,,,sample,base1-23,,S-base1-23-first,M-priya-g1_59
+single,Psyduck,Fossil,53,Common,Unlimited,,,,1,own,Priya S,collector,3,3,,,market,,,sample,base3-53,,S-base3-53-unl,M-priya-g1_54
+single,Venusaur,Base Set,15,Rare Holo,Shadowless,,,,1,trade,Tom W,collector,610,610,,,multiplier,,,sample,base1-15,,S-base1-15-shadow,M-tom-g1_3
+single,Giratina V,Lost Origin,186,Rare Ultra,Raw NM,,,,1,trade,Tom W,collector,1182,1182,,,market,,,sample,swsh11-186,,S-swsh11-186-raw,M-tom-gira
+single,Mewtwo-GX,Shining Legends,76,Rare Rainbow,Raw NM,,,,1,trade,Tom W,collector,135,135,,,market,,,sample,sm35-76,,S-sm35-76-raw,M-tom-mew
+single,Alakazam,Base Set,1,Rare Holo,1st Edition,,,,1,own,Tom W,collector,450,450,,,multiplier,,,sample,base1-1,,S-base1-1-first,M-tom-g1_65
+single,Slowpoke,Fossil,55,Common,Shadowless,,,,1,sell,Tom W,collector,3,3,3,,multiplier,Shadowless is a Base Set print only,,sample,base3-55,,S-base3-55-shadow,M-tom-g1_79
+single,Zubat,Fossil,57,Common,1st Edition,,,,1,trade,Tom W,collector,2,2,,,multiplier,,,sample,base3-57,,S-base3-57-first,M-tom-g1_41
+single,Squirtle,Base Set,63,Common,Unlimited,,,,1,trade,Tom W,collector,7,7,,,market,,,sample,base1-63,,S-base1-63-unl,M-tom-g1_7
+single,Blastoise,Base Set,2,Rare Holo,Unlimited,,,,1,own,Tom W,collector,328,328,,,market,,,sample,base1-2,,S-base1-2-unl,M-tom-g1_9
+single,Clefairy,Base Set,5,Rare Holo,Unlimited,,,,1,own,Tom W,collector,74,74,,,market,,,sample,base1-5,,S-base1-5-unl,M-tom-g1_35
+single,Charizard,Base Set,4,Rare Holo,Unlimited,,,,1,trade,Lena M,collector,1283,1283,,,market,,,sample,base1-4,,S-base1-4-unl,M-lena-g1_6
+slab,Mewtwo,Base Set,10,Rare Holo,Unlimited,,,9,1,sell,Lena M,collector,253,253,133,,multiplier,,Marketplace still prices this vintage card as ungraded,sample,base1-10,,G-base1-10-unl-PSA9,M-lena-g1_150
+slab,Sylveon VMAX,Evolving Skies,212,Rare Rainbow,,,,9,1,trade,Lena M,collector,1058,1058,,,multiplier,,,sample,swsh7-212,,G-swsh7-212-raw-PSA9,M-lena-sylv
+slab,Rayquaza VMAX,Evolving Skies,218,Rare Rainbow,,,,10,1,trade,Lena M,collector,7540,7540,,,multiplier,,,sample,swsh7-218,,G-swsh7-218-raw-PSA10,M-lena-ray
+single,Seaking,Jungle,46,Uncommon,Unlimited,,,,1,sell,Lena M,collector,3,3,3,,market,,,sample,base2-46,,S-base2-46-unl,M-lena-g1_119
+single,Abra,Base Set,43,Common,Unlimited,,,,1,trade,Lena M,collector,2,2,,,market,,,sample,base1-43,,S-base1-43-unl,M-lena-g1_63
+single,Caterpie,Base Set,45,Common,Unlimited,,,,1,trade,Lena M,collector,2,2,,,market,,,sample,base1-45,,S-base1-45-unl,M-lena-g1_10
+single,Nidoran ♀,Jungle,57,Common,Unlimited,,,,1,own,Lena M,collector,1,1,,,market,,,sample,base2-57,,S-base2-57-unl,M-lena-g1_29
+single,Lapras,Fossil,10,Rare Holo,Unlimited,,,,1,own,Lena M,collector,41,41,,,market,,,sample,base3-10,,S-base3-10-unl,M-lena-g1_131
+single,Kangaskhan,Jungle,5,Rare Holo,1st Edition,,,,1,trade,Sam O,collector,143,143,,,multiplier,,,sample,base2-5,,S-base2-5-first,M-sam-g1_115
+single,Dragonite,Fossil,4,Rare Holo,Shadowless,,,,1,sell,Sam O,collector,654,654,634,,multiplier,Shadowless is a Base Set print only,,sample,base3-4,,S-base3-4-shadow,M-sam-g1_149
+single,Flareon VMAX,Evolving Skies,18,Rare Holo VMAX,Raw NM,,,,1,trade,Sam O,collector,19,19,,,market,,,sample,swsh7-18,,S-swsh7-18-raw,M-sam-flare
+single,Machamp,Base Set,8,Rare Holo,Unlimited,,,,1,own,Sam O,collector,70,70,,,estimate,,,sample,base1-8,,S-base1-8-unl,M-sam-g1_68
+single,Wartortle,Base Set,42,Uncommon,Unlimited,,,,1,sell,Sam O,collector,7,7,7,,market,,,sample,base1-42,,S-base1-42-unl,M-sam-g1_8
+single,Ninetales,Base Set,12,Rare Holo,Unlimited,,,,1,trade,Sam O,collector,53,53,,,market,,,sample,base1-12,,S-base1-12-unl,M-sam-g1_38
+single,Beedrill,Base Set,17,Rare,Unlimited,,,,1,trade,Sam O,collector,9,9,,,market,,,sample,base1-17,,S-base1-17-unl,M-sam-g1_15
+single,Poliwrath,Base Set,13,Rare Holo,Unlimited,,,,1,own,Sam O,collector,50,50,,,market,,,sample,base1-13,,S-base1-13-unl,M-sam-g1_62
+single,Machop,Base Set,52,Common,Shadowless,,,,1,own,Sam O,collector,2,2,,,multiplier,,,sample,base1-52,,S-base1-52-shadow,M-sam-g1_66
+single,Glaceon VMAX,Evolving Skies,209,Rare Rainbow,Raw NM,,,,1,sell,Holo Hall,store,446,446,491,,market,,,sample,swsh7-209,,S-swsh7-209-raw,M-holohall-glac
+slab,Espeon VMAX,Fusion Strike,270,Rare Rainbow,,,,9,1,sell,Holo Hall,store,935,935,963,,multiplier,,,sample,swsh8-270,,G-swsh8-270-raw-PSA9,M-holohall-esp
+single,Pikachu,Jungle,60,Common,Unlimited,,,,1,sell,Holo Hall,store,8,8,8,,market,,,sample,base2-60,,S-base2-60-unl,M-holohall-g1_25
+single,Eevee,Jungle,51,Common,1st Edition,,,,1,sell,Holo Hall,store,12,12,13,,multiplier,,,sample,base2-51,,S-base2-51-first,M-holohall-g1_133
+single,Gengar,Fossil,5,Rare Holo,Shadowless,,,,1,sell,Holo Hall,store,740,740,777,,multiplier,Shadowless is a Base Set print only,,sample,base3-5,,S-base3-5-shadow,M-holohall-g1_94
+single,Umbreon VMAX,Evolving Skies,215,Rare Rainbow,Raw NM,,,,1,sell,Top Deck Collectables,store,3404,3404,3676,,market,,,sample,swsh7-215,,S-swsh7-215-raw,M-topdeck-umb
+slab,Giratina V,Lost Origin,186,Rare Ultra,,,,9,1,sell,Top Deck Collectables,store,2246,2246,2313,,multiplier,,,sample,swsh11-186,,G-swsh11-186-raw-PSA9,M-topdeck-gira
+single,Mewtwo,Base Set,10,Rare Holo,Unlimited,,,,1,sell,Top Deck Collectables,store,133,133,140,,market,,,sample,base1-10,,S-base1-10-unl,M-topdeck-g1_150
+single,Gyarados,Base Set,6,Rare Holo,Shadowless,,,,1,sell,Top Deck Collectables,store,154,154,159,,multiplier,,,sample,base1-6,,S-base1-6-shadow,M-topdeck-g1_130
+single,Charizard,Base Set,4,Rare Holo,Unlimited,,,,1,sell,Top Deck Collectables,store,1283,1283,1321,,market,,,sample,base1-4,,S-base1-4-unl,M-topdeck-g1_6
+single,Charizard,Base Set,4,Rare Holo,1st Edition,,,,1,sell,Slab & Sleeve,store,5902,5902,6433,,multiplier,,,sample,base1-4,,S-base1-4-first,M-slab-g1_6
+slab,Umbreon VMAX,Evolving Skies,215,Rare Rainbow,,,,10,1,sell,Slab & Sleeve,store,14296,14296,14868,,multiplier,,,sample,swsh7-215,,G-swsh7-215-raw-PSA10,M-slab-umb
+single,Venusaur,Base Set,15,Rare Holo,1st Edition,,,,1,sell,Slab & Sleeve,store,1169,1169,1216,,multiplier,,,sample,base1-15,,S-base1-15-first,M-slab-g1_3
+single,Mewtwo,Base Set,10,Rare Holo,Shadowless,,,,1,sell,Slab & Sleeve,store,320,320,330,,multiplier,,,sample,base1-10,,S-base1-10-shadow,M-slab-g1_150

@@ -1,0 +1,1 @@
+{ "name": "binder-loop-tools", "private": true, "description": "Build scripts for the Binder Loop database exports", "dependencies": { "jsdom": "^26.0.0" } }

@@ -1,0 +1,91 @@
+﻿stock_id,product_id,owner_id,owner_type,owner_name,suburb,status,qty,ask_aud,cert_number,note,source
+M-me-char,G-swsh45sv-SV107-raw-PSA9,me,me,Jonah B,Marrickville,trade,1,,,,sample
+M-me-g1_9,S-base1-2-unl,me,me,Jonah B,Marrickville,sell,1,328,,,sample
+M-me-gengar,S-swsh8-271-raw,me,me,Jonah B,Marrickville,trade,1,,,,sample
+M-me-leaf,S-swsh7-205-raw,me,me,Jonah B,Marrickville,trade,1,,,,sample
+M-me-g1_143,S-base2-11-shadow,me,me,Jonah B,Marrickville,own,1,,,,sample
+M-me-pika,S-swsh4-188-raw,me,me,Jonah B,Marrickville,own,1,,,,sample
+M-me-g1_149,S-base3-4-unl,me,me,Jonah B,Marrickville,trade,1,,,,sample
+M-me-g1_65,S-base1-1-shadow,me,me,Jonah B,Marrickville,sell,1,235,,,sample
+M-marcus-umb,G-swsh7-215-raw-PSA9,marcus,collector,Marcus T,Parramatta,trade,1,,,,sample
+M-marcus-sylv,S-swsh7-212-raw,marcus,collector,Marcus T,Parramatta,trade,1,,,,sample
+M-marcus-jolt,S-swsh7-51-raw,marcus,collector,Marcus T,Parramatta,trade,1,,,,sample
+M-marcus-flare,S-swsh7-18-raw,marcus,collector,Marcus T,Parramatta,own,1,,,,sample
+M-marcus-vapo,G-swsh7-30-raw-PSA9,marcus,collector,Marcus T,Parramatta,own,1,,,,sample
+M-marcus-mew,S-sm35-76-raw,marcus,collector,Marcus T,Parramatta,own,1,,,,sample
+M-marcus-g1_70,S-base2-48-unl,marcus,collector,Marcus T,Parramatta,sell,1,1,,,sample
+M-marcus-g1_48,S-base2-63-unl,marcus,collector,Marcus T,Parramatta,trade,1,,,,sample
+M-marcus-g1_76,S-base3-36-shadow,marcus,collector,Marcus T,Parramatta,trade,1,,,,sample
+M-marcus-g1_101,S-base2-2-unl,marcus,collector,Marcus T,Parramatta,own,1,,,,sample
+M-marcus-g1_77,S-base1-60-unl,marcus,collector,Marcus T,Parramatta,own,1,,,,sample
+M-aisha-glac,G-swsh7-209-raw-PSA10,aisha,collector,Aisha R,Newtown,trade,1,,,,sample
+M-aisha-lugia,S-swsh12-186-raw,aisha,collector,Aisha R,Newtown,trade,1,,,,sample
+M-aisha-tyra,S-swsh5-155-raw,aisha,collector,Aisha R,Newtown,trade,1,,,,sample
+M-aisha-pidg,S-swsh11-188-raw,aisha,collector,Aisha R,Newtown,sell,1,4,,,sample
+M-aisha-pika,G-swsh4-188-raw-PSA9,aisha,collector,Aisha R,Newtown,own,1,,,,sample
+M-aisha-g1_110,S-base3-45-unl,aisha,collector,Aisha R,Newtown,sell,1,3,,,sample
+M-aisha-g1_23,S-base3-46-shadow,aisha,collector,Aisha R,Newtown,trade,1,,,,sample
+M-aisha-g1_104,S-base2-50-unl,aisha,collector,Aisha R,Newtown,trade,1,,,,sample
+M-aisha-g1_12,S-base2-33-first,aisha,collector,Aisha R,Newtown,own,1,,,,sample
+M-aisha-g1_79,S-base3-55-unl,aisha,collector,Aisha R,Newtown,own,1,,,,sample
+M-dan-gira,S-swsh11-186-raw,dan,collector,Dan K,Penrith,trade,1,,,,sample
+M-dan-ray,S-swsh7-218-raw,dan,collector,Dan K,Penrith,sell,1,1616,,,sample
+M-dan-g1_68,S-base1-8-unl,dan,collector,Dan K,Penrith,sell,1,72,,,sample
+M-dan-g1_149,S-base3-4-unl,dan,collector,Dan K,Penrith,trade,1,,,,sample
+M-dan-g1_115,S-base2-5-unl,dan,collector,Dan K,Penrith,sell,1,31,,,sample
+M-dan-g1_65,S-base1-1-unl,dan,collector,Dan K,Penrith,sell,1,98,,,sample
+M-dan-g1_150,S-base1-10-unl,dan,collector,Dan K,Penrith,sell,1,121,,,sample
+M-dan-g1_44,S-base2-37-unl,dan,collector,Dan K,Penrith,trade,1,,,,sample
+M-dan-g1_39,S-base2-54-first,dan,collector,Dan K,Penrith,trade,1,,,,sample
+M-dan-g1_10,S-base1-45-unl,dan,collector,Dan K,Penrith,own,1,,,,sample
+M-dan-g1_113,S-base1-3-unl,dan,collector,Dan K,Penrith,own,1,,,,sample
+M-priya-esp,S-swsh8-270-raw,priya,collector,Priya S,Bondi,trade,1,,,,sample
+M-priya-vapo,S-swsh7-30-raw,priya,collector,Priya S,Bondi,trade,1,,,,sample
+M-priya-g1_143,S-base2-11-unl,priya,collector,Priya S,Bondi,own,1,,,,sample
+M-priya-pidg,S-swsh11-188-raw,priya,collector,Priya S,Bondi,own,1,,,,sample
+M-priya-g1_39,S-base2-54-first,priya,collector,Priya S,Bondi,sell,1,7,,,sample
+M-priya-g1_20,S-base1-40-first,priya,collector,Priya S,Bondi,trade,1,,,,sample
+M-priya-g1_113,S-base1-3-shadow,priya,collector,Priya S,Bondi,trade,1,,,,sample
+M-priya-g1_59,S-base1-23-first,priya,collector,Priya S,Bondi,own,1,,,,sample
+M-priya-g1_54,S-base3-53-unl,priya,collector,Priya S,Bondi,own,1,,,,sample
+M-tom-g1_3,S-base1-15-shadow,tom,collector,Tom W,Chatswood,trade,1,,,,sample
+M-tom-gira,S-swsh11-186-raw,tom,collector,Tom W,Chatswood,trade,1,,,,sample
+M-tom-mew,S-sm35-76-raw,tom,collector,Tom W,Chatswood,trade,1,,,,sample
+M-tom-g1_65,S-base1-1-first,tom,collector,Tom W,Chatswood,own,1,,,,sample
+M-tom-g1_79,S-base3-55-shadow,tom,collector,Tom W,Chatswood,sell,1,3,,,sample
+M-tom-g1_41,S-base3-57-first,tom,collector,Tom W,Chatswood,trade,1,,,,sample
+M-tom-g1_7,S-base1-63-unl,tom,collector,Tom W,Chatswood,trade,1,,,,sample
+M-tom-g1_9,S-base1-2-unl,tom,collector,Tom W,Chatswood,own,1,,,,sample
+M-tom-g1_35,S-base1-5-unl,tom,collector,Tom W,Chatswood,own,1,,,,sample
+M-lena-g1_6,S-base1-4-unl,lena,collector,Lena M,Hurstville,trade,1,,,,sample
+M-lena-g1_150,G-base1-10-unl-PSA9,lena,collector,Lena M,Hurstville,sell,1,133,,Marketplace still prices this vintage card as ungraded,sample
+M-lena-sylv,G-swsh7-212-raw-PSA9,lena,collector,Lena M,Hurstville,trade,1,,,,sample
+M-lena-ray,G-swsh7-218-raw-PSA10,lena,collector,Lena M,Hurstville,trade,1,,,,sample
+M-lena-g1_119,S-base2-46-unl,lena,collector,Lena M,Hurstville,sell,1,3,,,sample
+M-lena-g1_63,S-base1-43-unl,lena,collector,Lena M,Hurstville,trade,1,,,,sample
+M-lena-g1_10,S-base1-45-unl,lena,collector,Lena M,Hurstville,trade,1,,,,sample
+M-lena-g1_29,S-base2-57-unl,lena,collector,Lena M,Hurstville,own,1,,,,sample
+M-lena-g1_131,S-base3-10-unl,lena,collector,Lena M,Hurstville,own,1,,,,sample
+M-sam-g1_115,S-base2-5-first,sam,collector,Sam O,Wollongong,trade,1,,,,sample
+M-sam-g1_149,S-base3-4-shadow,sam,collector,Sam O,Wollongong,sell,1,634,,,sample
+M-sam-flare,S-swsh7-18-raw,sam,collector,Sam O,Wollongong,trade,1,,,,sample
+M-sam-g1_68,S-base1-8-unl,sam,collector,Sam O,Wollongong,own,1,,,,sample
+M-sam-g1_8,S-base1-42-unl,sam,collector,Sam O,Wollongong,sell,1,7,,,sample
+M-sam-g1_38,S-base1-12-unl,sam,collector,Sam O,Wollongong,trade,1,,,,sample
+M-sam-g1_15,S-base1-17-unl,sam,collector,Sam O,Wollongong,trade,1,,,,sample
+M-sam-g1_62,S-base1-13-unl,sam,collector,Sam O,Wollongong,own,1,,,,sample
+M-sam-g1_66,S-base1-52-shadow,sam,collector,Sam O,Wollongong,own,1,,,,sample
+M-holohall-glac,S-swsh7-209-raw,holohall,store,Holo Hall,Marrickville,sell,1,491,,,sample
+M-holohall-esp,G-swsh8-270-raw-PSA9,holohall,store,Holo Hall,Marrickville,sell,1,963,,,sample
+M-holohall-g1_25,S-base2-60-unl,holohall,store,Holo Hall,Marrickville,sell,1,8,,,sample
+M-holohall-g1_133,S-base2-51-first,holohall,store,Holo Hall,Marrickville,sell,1,13,,,sample
+M-holohall-g1_94,S-base3-5-shadow,holohall,store,Holo Hall,Marrickville,sell,1,777,,,sample
+M-topdeck-umb,S-swsh7-215-raw,topdeck,store,Top Deck Collectables,Parramatta,sell,1,3676,,,sample
+M-topdeck-gira,G-swsh11-186-raw-PSA9,topdeck,store,Top Deck Collectables,Parramatta,sell,1,2313,,,sample
+M-topdeck-g1_150,S-base1-10-unl,topdeck,store,Top Deck Collectables,Parramatta,sell,1,140,,,sample
+M-topdeck-g1_130,S-base1-6-shadow,topdeck,store,Top Deck Collectables,Parramatta,sell,1,159,,,sample
+M-topdeck-g1_6,S-base1-4-unl,topdeck,store,Top Deck Collectables,Parramatta,sell,1,1321,,,sample
+M-slab-g1_6,S-base1-4-first,slab,store,Slab & Sleeve,Chatswood,sell,1,6433,,,sample
+M-slab-umb,G-swsh7-215-raw-PSA10,slab,store,Slab & Sleeve,Chatswood,sell,1,14868,,,sample
+M-slab-g1_3,S-base1-15-first,slab,store,Slab & Sleeve,Chatswood,sell,1,1216,,,sample
+M-slab-g1_150,S-base1-10-shadow,slab,store,Slab & Sleeve,Chatswood,sell,1,330,,,sample
