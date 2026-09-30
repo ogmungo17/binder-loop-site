@@ -14,6 +14,9 @@ python3 -m http.server 8080      # then visit http://localhost:8080
 
 ## Deploy it
 
+After changing any file, bump the version number in `index.html` (`window.BL_V` and every `?v=` on the CSS and
+script links) so browsers pick up the new files on a normal refresh instead of showing a cached copy.
+
 Upload the folder to any static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages, S3).
 Routing is hash-based (`#/app/market/listings`), so no rewrite rules are needed.
 The `database/` and `tools/` folders are not needed on the live site; leave them out if you like.
@@ -118,6 +121,12 @@ There are three logins for showing the site in a shop: **Jonah B** (Marrickville
 and trade nights, saved separately in this browser, so switching never mixes them. **Reset demo data** in the same
 dialog puts the signed-in profile back to its starting sample state before the next demo. Profiles are defined in
 `PROFILES` at the top of `js/app.js`.
+
+The three profiles can see each other. Signed in as one, the other two show up under Social, Collectors (tagged
+"Demo login") with the binder and want list they last saved in this browser, so a change made as Jonah shows up
+for Ella and Chris. Their listings appear in the Buy feed, and trades with them are suggested. The Collectors tab has a
+search box that matches by name, suburb or what someone collects. Messages and offers aren't shared between profiles:
+if Ella sends Jonah an offer, the reply is simulated, just as with the sample collectors.
 
 ## What is real and what is sample data
 
