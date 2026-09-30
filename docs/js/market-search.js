@@ -162,11 +162,12 @@ function pvContinue(){
 function psRank(name, words){ const n=name.toLowerCase(), phrase=words.join(" "); return n===phrase?0:n.startsWith(phrase)?1:n.startsWith(words[0])?2:3; }
 function psQuery(q){
   const box=document.getElementById("ps-res"); if(!box) return;
-  const words=q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if(!words.length){ box.innerHTML=""; return; }
+  const words=q.trim().toLowerCase().split(/\s+/).filter(Boolean), f=cfState("list");
+  psOwned();
+  if(!words.length && !cfActive(f)){ box.innerHTML=""; return; }
   const cardHits=[], sealHits=[];
-  for(const c of CAT.cards){ if(words.every(w=>c.hay.includes(w))){ cardHits.push(c); if(cardHits.length>=300) break; } }
-  for(const x of SEAL.items){ if(words.every(w=>x.hay.includes(w))){ sealHits.push(x); if(sealHits.length>=300) break; } }
+  for(const c of CAT.cards){ if(words.every(w=>c.hay.includes(w)) && cfPass(f,cfCatItem(c,cfGradeableCat))){ cardHits.push(c); if(cardHits.length>=300) break; } }
+  for(const x of SEAL.items){ if(words.every(w=>x.hay.includes(w)) && cfPass(f,cfSealItem(x))){ sealHits.push(x); if(sealHits.length>=300) break; } }
   cardHits.sort((a,b)=>psRank(a.name,words)-psRank(b.name,words)||a.name.length-b.name.length);
   sealHits.sort((a,b)=>psRank(a.name,words)-psRank(b.name,words)||a.name.length-b.name.length);
   const rows=[];
@@ -177,26 +178,36 @@ function psQuery(q){
   sealHits.slice(0,6).forEach(x=>{
     rows.push(`<button class="dbhit" onclick="openListSealed(${x.tid})"><b>${esc(x.name)}</b><span>${esc(x.set||"No set")} · ${esc(x.kind)} · ${x.aud!==""?money(x.aud):"No price yet"}</span></button>`);
   });
-  box.innerHTML = rows.length ? rows.join("") : `<p class="muted dbhint">Nothing matches. Try fewer words.</p>`;
+  box.innerHTML = rows.length ? rows.join("") : `<p class="muted dbhint">Nothing matches. Try fewer words${cfActive(f)?" or clear a filter":""}.</p>`;
+}
+// the "Your binder" picks in the list modal, narrowed by the same filters (Graded here means your copy is graded)
+function psOwned(){
+  const box=document.getElementById("ps-own"); if(!box) return;
+  const f=cfState("list"), owned=Object.keys(me.cards).filter(k=>cfPass(f,cfKeyItem(k,k=>/^psa/.test(me.vars[k]||""))))
+    .sort((a,b)=>buyersFor(b).length-buyersFor(a).length||valOf(b,me.vars[b])-valOf(a,me.vars[a]));
+  box.innerHTML = !Object.keys(me.cards).length ? "" : `<h3 class="sub">Your binder</h3>` + (owned.length?`<div class="pickgrid" style="margin-top:10px">${owned.map(k=>{ const on=me.cards[k]==="sell", n=buyersFor(k).length;
+    return `<button class="pickc" onclick="openListCard('${k}')"><span class="fw big">${faceOf(k,me)}</span><b>${CARDS[k].n}</b><span>${on?"Listed at "+money(askOf(k)):n?plural(n,"buyer")+" looking":money(valOf(k,me.vars[k]))}</span></button>`; }).join("")}</div>`
+    : `<p class="muted" style="font-size:14px;margin-top:8px">Nothing in your binder matches these filters.</p>`);
 }
 
 /* ---------- Search tab: spans every card and every sealed product ---------- */
 function searchResults(){
-  const words=F2.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const filtersActive = F2.sort!=="name" || F2.type!=="All" || F2.set!=="all" || F2.min!==""||F2.max!==""||F2.stock||F2.kind!=="all";
+  const words=F2.q.trim().toLowerCase().split(/\s+/).filter(Boolean), f=cfState("search");
+  const filtersActive = F2.sort!=="name" || F2.type!=="All" || cfActive(f) || F2.min!==""||F2.max!==""||F2.stock;
   const out=[];
   if(!words.length && !filtersActive){
     Object.keys(CARDS).filter(k=>!CARDS[k].cid && CARDS[k].v>=60).forEach(k=>out.push({kind:"card",k}));
   }else{
-    if(F2.kind!=="sealed") for(const c of CAT.cards){
+    if(!f.sealed) for(const c of CAT.cards){
       if(F2.type!=="All" && c.type!==F2.type) continue;
-      if(F2.set!=="all" && c.set.id!==F2.set) continue;
+      if(f.set!=="all" && c.set.id!==f.set) continue;
       if(words.length && !words.every(w=>c.hay.includes(w))) continue;
       const key=keyForCatalogCard(c.id);
+      if(!cfPass(f, key?cfKeyItem(key,cfGradedHeld):cfCatItem(c,()=>false))) continue;
       if(key) out.push({kind:"card",k:key}); else out.push({kind:"catcard",c});
     }
-    if(F2.kind!=="cards" && F2.type==="All") for(const x of SEAL.items){
-      if(F2.set!=="all" && x.setId!==F2.set) continue;
+    if(F2.type==="All") for(const x of SEAL.items){
+      if(!cfPass(f, cfSealItem(x))) continue;
       if(words.length && !words.every(w=>x.hay.includes(w))) continue;
       out.push({kind:"sealed",x});
     }
@@ -251,33 +262,33 @@ function searchPage(){
     : h.kind==="catcard" ? searchCatRow(h.c) : searchSealedRow(h.x);
   return pageHead("Search","Every card and sealed product, with prices where we have them.")
   + `<div class="bigsearch">${ic("search",20)}<input id="sq" placeholder="Charizard, Evolving Skies box, 143" autocomplete="off" value="${esc(F2.q)}" aria-label="Search cards and sealed product" oninput="F2.q=this.value;F2.limit=24;render()"></div>
+    ${cfBar("search",()=>{ F2.limit=24; render(); },{gradedTip:"Cards someone nearby has in a PSA grade"})}
     <div class="rbar"><h2>${plural(hits.length,"result")}</h2>
       <div class="rbar-r">
         <div class="fwrap"><button class="btn fbtn${act.length?" has":""}" aria-expanded="${!!F2.open}" aria-haspopup="dialog" onclick="toggleFilters()">${ic("filter",16)}Filters${act.length?`<i class="fcount">${act.length}</i>`:""}</button>${F2.open?filterPop(hits.length):""}</div>
         <label class="sel">Sort<select onchange="F2.sort=this.value;F2.limit=24;render()" aria-label="Sort results">${SORTS.map(([v,l])=>`<option value="${v}"${F2.sort===v?" selected":""}>${l}</option>`).join("")}</select></label>
         <div class="viewt" role="group" aria-label="View"><button class="${F2.view==="grid"?"on":""}" aria-pressed="${F2.view==="grid"}" onclick="F2.view='grid';render()" aria-label="Grid view">${ic("grid",17)}</button><button class="${F2.view==="table"?"on":""}" aria-pressed="${F2.view==="table"}" onclick="F2.view='table';render()" aria-label="Table view">${ic("list",17)}</button></div></div></div>
-    ${act.length?`<div class="actf">${act.map(([id,l])=>`<button class="chip on" onclick="clearFilter('${id}')" aria-label="Remove filter: ${esc(l)}">${esc(l)}${ic("x",13)}</button>`).join("")}<button class="link" onclick="setF2({type:'All',stock:false,min:'',max:''})">Clear all</button></div>`:""}
+    ${act.length?`<div class="actf">${act.map(([id,l])=>`<button class="chip on" onclick="clearFilter('${id}')" aria-label="Remove filter: ${esc(l)}">${esc(l)}${ic("x",13)}</button>`).join("")}<button class="link" onclick="cfReset('search');setF2({type:'All',stock:false,min:'',max:''})">Clear all</button></div>`:""}
     ${!hits.length?emptyBox("Nothing matches","Try different words, or remove a filter."):F2.view==="grid"?`<div class="tiles">${shown.map(tile).join("")}</div>`
       :`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Item</th><th>Set</th><th></th><th class="num">Price</th><th class="num">Selling</th><th class="num">Trading</th><th></th></tr></thead><tbody>${shown.map(row).join("")}</tbody></table></div>`}
     ${hits.length>F2.limit?`<div class="more-w"><span class="muted">Showing ${F2.limit} of ${hits.length}</span><button class="btn" onclick="F2.limit+=24;render()">Show 24 more</button></div>`:""}`;
 }
 function searchActiveFilters(){
-  return [F2.type!=="All"&&["type",F2.type], F2.set!=="all"&&CAT.setById[F2.set]&&["set",CAT.setById[F2.set].name],
-    F2.kind!=="all"&&["kind",F2.kind==="cards"?"Cards only":"Sealed only"], F2.stock&&["stock","Available to trade or buy"],
+  const f=cfState("search");
+  return [F2.type!=="All"&&["type",F2.type], f.set!=="all"&&CAT.setById[f.set]&&["cf:set",CAT.setById[f.set].name],
+    ...CF_KEYS.map(x=>f[x]&&["cf:"+x,CF_LABEL[x]]), F2.stock&&["stock","Available to trade or buy"],
     (F2.min!==""||F2.max!=="")&&["price",F2.min!==""&&F2.max!==""?`${money(+F2.min)} to ${money(+F2.max)}`:F2.min!==""?`${money(+F2.min)} and up`:`Up to ${money(+F2.max)}`]].filter(Boolean);
 }
-function clearFilter(id){ setF2(id==="type"?{type:"All"}:id==="set"?{set:"all"}:id==="kind"?{kind:"all"}:id==="price"?{min:"",max:""}:{[id]:false}); }
+function clearFilter(id){ if(id.indexOf("cf:")===0){ const x=id.slice(3), f=cfState("search"); if(x==="set") f.set="all"; else f[x]=false; setF2({}); return; } setF2(id==="type"?{type:"All"}:id==="set"?{set:"all"}:id==="kind"?{kind:"all"}:id==="price"?{min:"",max:""}:{[id]:false}); }
 function filterPop(n){
   const sw=(on,label,fn)=>`<button class="fsw${on?" on":""}" role="switch" aria-checked="${on}" onclick="${fn}"><span>${label}</span><i></i></button>`;
-  const kindSeg=[["all","All"],["cards","Cards"],["sealed","Sealed"]].map(([id,l])=>`<button class="${F2.kind===id?"on":""}" aria-pressed="${F2.kind===id}" onclick="setF2({kind:'${id}'})">${l}</button>`).join("");
   return `<div class="fpop" role="dialog" aria-label="Filters">
     <div class="fpop-h"><h3>Filters</h3><button class="icon-btn sm" onclick="toggleFilters(false)" aria-label="Close filters">${ic("x",15)}</button></div>
-    <h4>Kind</h4><div class="segc">${kindSeg}</div>
-    <h4>Set</h4><select class="dbsel" style="width:100%" aria-label="Set" onchange="setF2({set:this.value})">${dbSetOptions(F2.set)}</select>
-    ${F2.kind!=="sealed"?`<h4>Type</h4><div class="chips-l">${TYPES.map(t=>`<button class="chip${F2.type===t?" on":""}" aria-pressed="${F2.type===t}" onclick="setF2({type:'${t}'})">${t}</button>`).join("")}</div>`:""}
+    <p class="muted" style="font-size:13px;margin:0 0 4px">Set, holographic, sealed, graded and alternate art are in the bar under the search box.</p>
+    ${!cfState("search").sealed?`<h4>Type</h4><div class="chips-l">${TYPES.map(t=>`<button class="chip${F2.type===t?" on":""}" aria-pressed="${F2.type===t}" onclick="setF2({type:'${t}'})">${t}</button>`).join("")}</div>`:""}
     <h4>Show only</h4>${sw(F2.stock,"Someone has one to trade or sell","setF2({stock:!F2.stock})")}
     <h4>Price</h4><div class="range"><input type="number" min="0" placeholder="Min" aria-label="Minimum price" value="${esc(F2.min)}" onchange="setF2({min:this.value})"><span>to</span><input type="number" min="0" placeholder="Max" aria-label="Maximum price" value="${esc(F2.max)}" onchange="setF2({max:this.value})"></div>
-    <div class="fpop-f"><button class="link" onclick="setF2({type:'All',set:'all',kind:'all',stock:false,min:'',max:''})">Clear all</button><button class="btn primary" onclick="toggleFilters(false)">Show ${plural(n,"result")}</button></div></div>`;
+    <div class="fpop-f"><button class="link" onclick="cfReset('search');setF2({type:'All',stock:false,min:'',max:''})">Clear all</button><button class="btn primary" onclick="toggleFilters(false)">Show ${plural(n,"result")}</button></div></div>`;
 }
 
 /* ---------- "Add a card" (binder, not for sale) now searches the whole catalogue too ---------- */
@@ -289,18 +300,19 @@ function openAddCard(q){
         :`<div class="empty" role="status"><b>Loading the catalogue…</b><p>About 20,000 cards. This only happens the first time.</p></div>`}</div>`,{label:"Add a card"});
     return;
   }
-  if(q!=null) addQ=q; const s=addQ.trim().toLowerCase(), words=s.split(/\s+/).filter(Boolean);
+  if(q!=null) addQ=q; const s=addQ.trim().toLowerCase(), words=s.split(/\s+/).filter(Boolean), f=cfState("add");
   let hits=[];
-  if(words.length){
-    for(const c of CAT.cards){ if(words.every(w=>c.hay.includes(w))){ hits.push(c); if(hits.length>=300) break; } }
+  if(words.length || cfActive(f)){
+    for(const c of CAT.cards){ if(words.every(w=>c.hay.includes(w)) && cfPass(f,cfCatItem(c,cfGradeableCat))){ hits.push(c); if(hits.length>=300) break; } }
     hits.sort((a,b)=>psRank(a.name,words)-psRank(b.name,words)||a.name.length-b.name.length);
     hits=hits.slice(0,8);
   }
   openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left"><h2>Add a card</h2><p class="muted">Search any card, then add it to your binder or your want list.</p>
     <div class="bigsearch" style="margin:14px 0"><input id="aq" data-autofocus placeholder="Search by name, set or Pokédex number" autocomplete="off" value="${esc(addQ)}" oninput="addQ=this.value;openAddCard()" aria-label="Search cards"></div>
+    ${cfBar("add",()=>openAddCard(),{noSealed:"Only cards go in a binder or want list",gradedTip:"Cards that come in PSA grades"})}
     ${hits.map(c=>{ const key=keyForCatalogCard(c.id), price=key?money(valOf(key,variantsFor(key)[0].id)):"No price yet";
       return `<div class="prow static"><span class="fw sm">${key?cardFace(key,{sm:true}):`<div class="cf sm" style="--h:${CAT.typeHue[c.type]||hashHue(c.name)}"><span class="cf-art"><i>${esc((c.name[0]||"?").toUpperCase())}</i></span></div>`}</span><span><b>${esc(c.name)}</b><em>${esc(c.set.name)}</em></span><span class="val">${price}</span>
-      <button class="btn sm" onclick="addCatalogCard('${c.id}')">Add to binder</button><button class="btn sm" onclick="wantCatalogCard('${c.id}')">Add to want list</button></div>`; }).join("")||(words.length?`<p class="muted">Nothing matches that.</p>`:"")}</div>`,{label:"Add a card"});
+      <button class="btn sm" onclick="addCatalogCard('${c.id}')">Add to binder</button><button class="btn sm" onclick="wantCatalogCard('${c.id}')">Add to want list</button></div>`; }).join("")||(words.length||cfActive(f)?`<p class="muted">Nothing matches that${cfActive(f)?". Try clearing a filter":""}.</p>`:"")}</div>`,{label:"Add a card"});
   const n=$("#aq"); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); }
 }
 function addCatalogCard(id){
