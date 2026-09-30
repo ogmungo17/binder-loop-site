@@ -1064,12 +1064,13 @@ function tradeDetail(it){
 }
 
 /* ---------- Listings ---------- */
-const F1={seller:"all",wants:false,holo:false,min:"",max:"",sort:"best"};
+const F1={seller:"all",wants:false,min:"",max:"",sort:"best"};
 function listingsPage(){
   const all=listings(), wantN=all.filter(l=>me.wants.includes(l.k)).length;
   let L=all.slice();
   if(F1.seller==="people") L=L.filter(l=>!l.seller.store); if(F1.seller==="stores") L=L.filter(l=>l.seller.store);
-  if(F1.wants) L=L.filter(l=>me.wants.includes(l.k)); if(F1.holo) L=L.filter(l=>isHolo(l.k));
+  if(F1.wants) L=L.filter(l=>me.wants.includes(l.k));
+  const cf=cfState("buy"); L=L.filter(l=>cfPass(cf,cfKeyItem(l.k,k=>/^psa/.test(l.seller.vars[k]||""))));
   const mn=+F1.min||0, mx=F1.max===""?Infinity:+F1.max; L=L.filter(l=>l.price>=mn&&l.price<=mx);
   const w=l=>me.wants.includes(l.k)?0:1;
   const sorters={best:(a,b)=>w(a)-w(b)||a.diff-b.diff,low:(a,b)=>a.price-b.price,high:(a,b)=>b.price-a.price,near:(a,b)=>a.dist-b.dist,deal:(a,b)=>a.diff-b.diff};
@@ -1080,12 +1081,12 @@ function listingsPage(){
       <h3>Seller</h3>${seg("all","Everyone",all.length)}${seg("people","Collectors",all.filter(l=>!l.seller.store).length)}${seg("stores","Partner stores",all.filter(l=>l.seller.store).length)}
       <h3>Show only</h3>
       <button class="opt-s${F1.wants?" on":""}" aria-pressed="${F1.wants}" onclick="F1.wants=!F1.wants;render()">On my want list<i>${wantN}</i></button>
-      <button class="opt-s${F1.holo?" on":""}" aria-pressed="${F1.holo}" onclick="F1.holo=!F1.holo;render()">Holographic cards</button>
       <h3>Price</h3>
       <div class="range"><input type="number" min="0" placeholder="Min" aria-label="Minimum price" value="${esc(F1.min)}" onchange="F1.min=this.value;render()"><span>to</span><input type="number" min="0" placeholder="Max" aria-label="Maximum price" value="${esc(F1.max)}" onchange="F1.max=this.value;render()"></div>
-      <button class="link" style="margin-top:14px" onclick="Object.assign(F1,{seller:'all',wants:false,holo:false,min:'',max:'',sort:'best'});render()">Clear filters</button>
+      <button class="link" style="margin-top:14px" onclick="Object.assign(F1,{seller:'all',wants:false,min:'',max:'',sort:'best'});cfReset('buy');render()">Clear filters</button>
     </aside>
     <section>
+      ${cfBar("buy",()=>render(),{sets:all.map(l=>cfSetKey(l.k)).filter(Boolean),noSealed:"Sealed product isn't in the Buy feed yet. Find it in Search.",gradedTip:"Listings in a PSA grade"})}
       <div class="rbar"><h2>${plural(L.length,"listing")}</h2><label class="sel">Sort<select onchange="F1.sort=this.value;render()" aria-label="Sort listings">${[["best","Best for you"],["low","Price, low to high"],["high","Price, high to low"],["deal","Biggest discount"],["near","Nearest"]].map(([v,l])=>`<option value="${v}"${F1.sort===v?" selected":""}>${l}</option>`).join("")}</select></label></div>
       ${L.length?`<div class="tiles">${L.map(l=>{ const s=l.seller, req=isRequested(l.id);
         return `<button class="tile" onclick="openListing('${l.id}')"><span class="tile-art tilt">${faceOf(l.k,s)}<span class="sticker">${money(l.price)}</span></span>
@@ -1279,11 +1280,11 @@ function presetList(key,list,mode){
   saveNights(); render();
 }
 function nightSearch(key,q){
-  const box=$("#nres"); if(!box) return; q=q.trim().toLowerCase(); const p=nightPlan(key);
-  if(!q){ box.innerHTML=""; return; }
-  const hits=Object.keys(CARDS).filter(k=>!p.seek.includes(k)&&!me.wants.includes(k)&&(CARDS[k].n.toLowerCase().includes(q)||(CARDS[k].dex&&String(CARDS[k].dex)===q)))
+  const box=$("#nres"); if(!box) return; q=q.trim().toLowerCase(); const p=nightPlan(key), f=cfState("night");
+  if(!q && !cfActive(f)){ box.innerHTML=""; return; }
+  const hits=Object.keys(CARDS).filter(k=>!p.seek.includes(k)&&!me.wants.includes(k)&&(!q||CARDS[k].n.toLowerCase().includes(q)||(CARDS[k].dex&&String(CARDS[k].dex)===q))&&cfPass(f,cfKeyItem(k,cfGradedHeld)))
     .sort((a,b)=>(CARDS[a].dex||999)-(CARDS[b].dex||999)||CARDS[b].v-CARDS[a].v).slice(0,6);
-  box.innerHTML=hits.length?hits.map(k=>`<button class="prow" onclick="toggleIn('${key}','seek','${k}')"><span class="fw sm">${cardFace(k,{sm:true})}</span><span><b>${esc(CARDS[k].n)}</b><em>${esc(CARDS[k].s)}</em></span><span class="val">${money(CARDS[k].v)}</span><span class="add">${ic("plus",14)}Add</span></button>`).join(""):`<p class="muted" style="padding:8px 0">No card by that name, or it's already on your list.</p>`;
+  box.innerHTML=hits.length?hits.map(k=>`<button class="prow" onclick="toggleIn('${key}','seek','${k}')"><span class="fw sm">${cardFace(k,{sm:true})}</span><span><b>${esc(CARDS[k].n)}</b><em>${esc(CARDS[k].s)}</em></span><span class="val">${money(CARDS[k].v)}</span><span class="add">${ic("plus",14)}Add</span></button>`).join(""):`<p class="muted" style="padding:8px 0">No card by that name${cfActive(f)?" with these filters":""}, or it's already on your list.</p>`;
 }
 function pickRow(key,list,k,owner,on,sub){
   return `<button class="prow${on?" on":""}" aria-pressed="${on}" onclick="toggleIn('${key}','${list}','${k}')"><span class="fw sm">${faceOf(k,owner,{sm:true})}</span><span><b>${CARDS[k].n}</b>${vchipOf(k,owner)}<em>${sub}</em></span><span class="val">${money(owner===me?valOf(k,me.vars[k]):CARDS[k].v)}</span><i class="ck">${on?ic("check",14):""}</i></button>`;
@@ -1307,7 +1308,8 @@ function nightDetail(n){
         <div class="chips-l" style="margin-bottom:10px"><button class="chip" onclick="presetList('${key}','seek','wants')">Add my whole want list (${me.wants.length})</button><button class="chip" onclick="presetList('${key}','seek','clear')">Clear</button></div>
         ${wantList.map(k=>pickRow(key,"seek",k,{vars:{}},p.seek.includes(k),me.wants.includes(k)?CARDS[k].s:"Added for this night")).join("")}
         <h4 class="sub">Looking for something else?</h4>
-        <label class="field"><input id="nq" data-keep placeholder="Search a card to add for this night" autocomplete="off" oninput="nightSearch('${key}',this.value)"></label><div id="nres"></div></section></div>`;
+        <label class="field"><input id="nq" data-keep placeholder="Search a card to add for this night" autocomplete="off" oninput="nightSearch('${key}',this.value)"></label>
+        ${cfBar("night",()=>nightSearch(key,($("#nq")||{}).value||""),{sets:Object.keys(CARDS).map(cfSetKey).filter(Boolean),noSealed:"Trade nights are for cards",gradedTip:"Cards someone nearby has in a PSA grade"})}<div id="nres"></div></section></div>`;
   }
   const there=[]; ppl.forEach(u=>avail(u).forEach(k=>{ if(mySeek.includes(k)) there.push({k,u}); })); Object.keys(st.cards).forEach(k=>{ if(mySeek.includes(k)) there.push({k,u:st}); });
   const wantMine=[]; [...ppl,st].forEach(u=>myBring.forEach(k=>{ if(u.wants.includes(k)) wantMine.push({k,u}); }));
@@ -1631,14 +1633,13 @@ function renderListModal(){
           :`<div class="empty" role="status"><b>Loading the catalogue…</b><p>About 20,000 cards. This only happens the first time.</p></div>`}</div>`,{label:"List an item"});
       return;
     }
-    const owned=Object.keys(me.cards).sort((a,b)=>buyersFor(b).length-buyersFor(a).length||valOf(b,me.vars[b])-valOf(a,me.vars[a]));
     openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left">
       <h2>List an item for sale</h2><p class="muted">Search for any card or sealed product, or pick from your binder below.</p>
       <div class="bigsearch" style="margin:14px 0">${ic("search",18)}<input id="psq" data-autofocus placeholder="Search any card or sealed product" autocomplete="off" oninput="psQuery(this.value)" aria-label="Search cards and sealed product"></div>
-      <div id="ps-res" class="dbres" style="margin-bottom:6px"></div>
-      ${owned.length?`<h3 class="sub">Your binder</h3><div class="pickgrid" style="margin-top:10px">${owned.map(k=>{ const on=me.cards[k]==="sell", n=buyersFor(k).length;
-        return `<button class="pickc" onclick="openListCard('${k}')"><span class="fw big">${faceOf(k,me)}</span><b>${CARDS[k].n}</b><span>${on?"Listed at "+money(askOf(k)):n?plural(n,"buyer")+" looking":money(valOf(k,me.vars[k]))}</span></button>`; }).join("")}</div>`:""}
+      ${cfBar("list",()=>psQuery(($("#psq")||{}).value||""),{gradedTip:"Your graded cards, and cards that come in PSA grades"})}
+      <div id="ps-res" class="dbres" style="margin-bottom:6px"></div><div id="ps-own"></div>
       <div class="mdl-actions left"><button class="btn" onclick="closeModal()">Cancel</button></div></div>`,{wide:true,label:"List an item"});
+    psQuery("");
     return;
   }
   const k=LD.k, c=CARDS[k], market=valOf(k,LD.v), p=pctVs(LD.price,market), comps=comparables(k,LD.v), buyers=buyersFor(k), editing=me.cards[k]==="sell";

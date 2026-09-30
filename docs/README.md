@@ -38,9 +38,28 @@ plus 2,938 sealed products — is the data source behind two things:
   simpler flow: quantity and an asking price, no grading or buyer-matching.
 
 A few deliberate limits, given how much of the catalogue has no price at all (see below): the price filter only
-matches items with a known price; the old "Holographic cards" filter is gone (holo status isn't in the catalogue
-data); and a sealed listing shows in Search and on your own Selling tab, but not yet in the general Buy feed
-alongside card listings.
+matches items with a known price, and a sealed listing shows in Search and on your own Selling tab, but not yet in
+the general Buy feed alongside card listings.
+
+### Card filters
+
+Every card search has the same filter bar, in `js/card-filters.js`: **Set**, **Holographic**, **Sealed**, **Graded** and
+**Alternate art**. It's on Search, the Buy feed, "List an item", "Add a card" (binder and want list) and the "Looking
+for something else?" search on a trade night. Each search remembers its own filters until the page reloads. Where a filter
+can't apply it's greyed out with the reason on hover (a binder or a trade night can't hold sealed product, and sealed
+listings aren't in the Buy feed yet). Some limits come from the data:
+
+- **Holographic and alternate art are worked out, not recorded.** The catalogue has no holo or alt-art flag, so
+  holo means any rarity above plain Common/Uncommon/Rare/Promo ("Rare Holo", "Rare Ultra", "Illustration Rare" and
+  so on). Alt art means "Illustration Rare", "Special Illustration Rare" and Trainer Gallery cards, plus the
+  marketplace cards marked "Alt art". Sword & Shield era alt arts outside the sample marketplace are filed under
+  rarities like "Rare Secret", alongside ordinary full arts, so the filter misses them.
+- **Graded means slightly different things by search.** On Search and trade nights it's a card someone nearby has in a
+  PSA grade; on the Buy feed it's a listing in a PSA grade. When listing or adding a card it's a card that comes in PSA
+  grades (vintage prints come as Unlimited, Shadowless or 1st Edition instead), and in "List an item" your own binder
+  picks match only if your copy is graded.
+- **Set** uses the catalogue's sets, so it waits for the catalogue to load. The Buy feed and trade nights offer only the
+  sets that have cards there.
 
 ### As files (in `database/`)
 

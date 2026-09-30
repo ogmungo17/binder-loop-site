@@ -685,3 +685,11 @@ button.lrow:hover{background:var(--sunk)}
 .plist{display:grid;gap:4px;margin-top:16px}
 .prow{border:1px solid transparent}
 .prow.on{border-color:var(--line);background:var(--sunk)}
+
+/* ---------- card filters (Set, Holographic, Sealed, Graded, Alternate art) ---------- */
+.cfbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 16px}
+.cfbar .cf-set{width:auto;max-width:240px;min-width:0}
+.cfbar .cf-set.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+.cfbar .chip[disabled]{opacity:.45;cursor:not-allowed}
+.mdl .cfbar{margin:-4px 0 14px}
+.field + .cfbar{margin-top:10px}
