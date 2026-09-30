@@ -121,12 +121,13 @@ function gameSwitch(){
 }
 // the page behind a list or add pop-up follows the game too
 function gameRedraw(){ const kind=MODAL_KIND; render(); if(kind==="list") renderListModal(); else if(kind==="add") openAddCard(); }
-function setGame(g){
+function setGame(g,quiet){   // quiet: the caller redraws
   if(g===GM.game) return;
   GM.game = g; try{ localStorage.setItem("binderloop.game", g); }catch(e){}
   Object.keys(CF).forEach(c=>{ CF[c].set = "all"; });   // a set belongs to one game
   if(F2.sort==="buy") F2.sort = "name";
   F2.limit = 24;
+  if(quiet) return;
   if(g==="mtg" && MTG.state==="idle") mtgLoad(gameRedraw);
   gameRedraw();
 }

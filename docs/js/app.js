@@ -928,6 +928,7 @@ function render(top){
   window.scrollTo(0,top?0:y);
   const log=$("#chatlog"); if(log) log.scrollTop=log.scrollHeight;
   document.title = S.view==="landing" ? "Binder Loop: buy, sell and trade Pokémon cards near you" : "Binder Loop / "+({home:"Home",market:"Marketplace",social:"Social",search:"Search",db:"Database",you:"You"})[S.page];
+  lpAfterRender();
 }
 
 /* ---------- app shell ---------- */
@@ -1933,19 +1934,7 @@ function landing(){
   const chase=["lugia","g1_6","umb","gengar","ray"];
   const ptable=[["g1_6","Charizard, Base Set"],["umb","Umbreon VMAX, alt art"]].map(([k,l])=>`<table class="ptable" style="margin-bottom:${k==="g1_6"?"18px":"0"}"><thead><tr><th colspan="2">${l}</th></tr></thead><tbody>${variantsFor(k).map(v=>`<tr><td>${v.label}</td><td class="num">${money(valOf(k,v.id))}</td></tr>`).join("")}</tbody></table>`).join("");
   return `<div class="lp">
-  <header class="lp-nav"><div class="lp-nav-in"><a class="brand" href="#/">${LOGO}<span>Binder Loop</span></a>
-    <nav class="lp-links" aria-label="Site"><a href="#how" onclick="event.preventDefault();goLanding('how')">How it works</a><a href="#features" onclick="event.preventDefault();goLanding('features')">Buying and selling</a><a href="#nights" onclick="event.preventDefault();goLanding('nights')">Trade nights</a><a href="#stores" onclick="event.preventDefault();goLanding('stores')">For stores</a><a href="#faq" onclick="event.preventDefault();goLanding('faq')">Questions</a></nav>
-    <div class="lp-nav-r"><button class="btn login" onclick="openProfiles()">${av(me,"xs")}Log in</button><button class="btn primary" onclick="go('home')">Open the demo</button></div></div></header>
-
-  <section class="hero"><div class="hero-in">
-    <div><h1>The local marketplace for Pokémon cards.</h1>
-      <p class="hero-p2">Buy from collectors and card stores near you, list your own cards in a minute, and trade instead when a swap suits you both. Every card is priced in Australian dollars.</p>
-      <div class="hero-cta"><button class="btn primary lg" onclick="go('market','listings')">Browse cards for sale</button><button class="btn lg" onclick="go('market','selling');LD.k=null;openListCard(null)">Sell a card</button></div>
-      <p class="hero-note">A working prototype. The collectors are fictional, and card prices are live TCGplayer market data.</p></div>
-    <div class="fan" aria-label="A fan of holographic cards">${chase.map(k=>`<div class="fc"><div class="tilt">${cardFace(k)}</div></div>`).join("")}
-      ${heroL?`<button class="float-m fl" onclick="go('market','listings');openListing('${heroL.id}')" aria-label="Open this listing"><span class="fw">${faceOf(heroL.k,heroL.seller)}</span><span class="fl-b"><b>${CARDS[heroL.k].n}</b><span>${heroL.seller.name}, ${heroL.seller.suburb}</span><span class="fl-p"><span class="sticker">${money(heroL.price)}</span><span class="tag hit">${-heroL.diff}% under market</span></span></span></button>`:""}
-      ${nights[0]?`<div class="float-t"><span class="tk-date"><b>${nights[0].date.getDate()}</b><span>${DOWS[nights[0].date.getDay()]}</span></span><span class="tk-b"><b>${nights[0].st.name}</b><span class="tk-s">${timeRange(nights[0].st.sched)}, trade night</span></span></div>`:""}</div>
-  </div></section>
+  ${lpStorefront()}
 
   <section class="lp-sec" id="how"><h2 class="lp-h">Buy, sell or swap, then meet at a local store.</h2><p class="lp-lede">Every sale and trade is handed over at a partner store, where staff check the card before any money or cards change hands.</p>
     <div class="steps">

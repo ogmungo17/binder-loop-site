@@ -41,6 +41,19 @@ A few deliberate limits, given how much of the catalogue has no price at all (se
 matches items with a known price, and a sealed listing shows in Search and on your own Selling tab, but not yet in
 the general Buy feed alongside card listings.
 
+### The front page
+
+The front page (`#/`, in `js/home.js`) is laid out like a storefront. A nav bar has a tab and a menu for each game (Pokémon and
+Magic: The Gathering) with a Shop all button, shortcuts (sealed, holographic or foil, alternate art, graded, open to trade), a
+featured listing and the newest sets; a second row links to Browse, Steals & deals, Wanted, Trade nights, Partner stores, How it
+works and Questions. Below it is a banner carousel (the local marketplace, Magic, this week's trade nights, and per-printing pricing;
+it advances every 6.5 seconds, pauses on hover or focus, and stays still for people who prefer reduced motion), a short intro, and
+three scrolling rows: **Trusted near you** (partner stores, then the collectors with the most trades), **Steals & deals** (the
+biggest % under market) and **Most wanted near you** (the cards on the most want lists). The two card rows follow the Game switch
+above them. Everything is live sample data, and nothing from a game's catalogue loads until that game's menu is opened or the game
+is chosen (Pokémon's set list loads the first time its menu opens). The marketing sections from before (how it works, features,
+trade nights, stores, questions) carry on below the rows.
+
 ### Magic: The Gathering (in progress)
 
 Every card search has a **Game** switch: Pokémon (the default) or Magic: The Gathering. Choosing Magic shows only Magic
@@ -157,6 +170,7 @@ Edition run but no Shadowless print offer Unlimited and 1st Edition only; everyt
 | `js/app.js` | Sample data, core logic and the marketplace views |
 | `js/db.js` | Catalogue loading (`CAT`, `SEAL`) and its lookup/search helpers |
 | `js/market-search.js` | Search, the "list an item" flow, and turning a catalogue pick into a real listing |
+| `js/home.js` | The front page: game tabs and menus, the banner carousel, and the collectors, deals and most-wanted rows |
 | `js/mtg.js` | Magic: The Gathering: the game switch, Magic search, Magic printings as marketplace cards, sample holdings (needs `data/mtg.js`, not built yet) |
 | `data/catalog.js` | Every English card and set, loaded on demand |
 | `data/sealed.js` | Sealed products with prices, loaded on demand |
