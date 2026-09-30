@@ -705,3 +705,15 @@ button.lrow:hover{background:var(--sunk)}
 .tbl em.mtgnum{display:block;font-style:normal;font-size:12.5px;color:var(--muted)}
 .tbl tr:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .mtgnote{margin-top:26px;max-width:80ch;line-height:1.5}
+.vchip.gm{background:rgba(224,90,48,.16);color:var(--ink);margin-left:6px}
+.vchip.foil{background:linear-gradient(97deg,#8FEFF3,#BDB2FF,#F9B7DC,#FFE2A3);color:#241A5A}
+.vchip.etched{background:linear-gradient(97deg,#FFD98A,#F7A8D8,#8CF0C0);color:#3A2A06}
+.vchip.nf{background:var(--sunk);color:var(--muted)}
+/* the game switch: Pokémon or Magic, one at a time */
+.gsw{display:flex;align-items:center;gap:10px;margin:0 0 16px;flex-wrap:wrap}
+.gsw-l{font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.gsw-b{padding:7px 14px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:600;font-size:14px}
+.gsw-b:first-of-type{border-radius:10px 0 0 10px}.gsw-b:last-of-type{border-radius:0 10px 10px 0;margin-left:-1px}
+.gsw-b:hover{color:var(--ink)}
+.gsw-b.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.mdl .gsw{margin:10px 0 12px}

@@ -261,10 +261,28 @@ GEN1.forEach(([dex,name,type,set,rar,val,hue])=>{
   CARDS["g1_"+dex] = {n:name, s:set+" · "+rar, v:val, h:hue, dex, type, rar, set};
 });
 CARDS.g1_68.s += " · price estimate";
+/* ---------- games ----------
+   Pokémon is the site's original game. Magic: The Gathering printings join CARDS (keys "m_...", game:"mtg") when they're
+   listed, added to a binder or want list, or used by the sample collectors (js/mtg.js). A Magic card's usd and buy are
+   Card Kingdom's retail and buylist prices in US cents for [normal, foil, etched foil], 0 where it doesn't list that finish. */
+const GAMES = [["pokemon","Pokémon"],["mtg","MTG"]];
+const GM = {game:"pokemon"};
+try{ const g=localStorage.getItem("binderloop.game"); if(GAMES.some(x=>x[0]===g)) GM.game=g; }catch(e){}
+const gameOf = k=>(CARDS[k]&&CARDS[k].game)||"pokemon";
+const MTG_FINISHES = [["nf","Normal","Normal"],["foil","Foil","Foil"],["etched","Etched foil","Etched"]];
+function mtgVariantsOf(c){
+  const key=c.usd.join();
+  if(c.vs && c.vsKey===key) return c.vs;
+  const base=c.usd.find(x=>x)||0, out=[];
+  MTG_FINISHES.forEach(([id,label,short],i)=>{ if(c.usd[i]) out.push({id,label,short,mult:c.usd[i]/base,note:"Card Kingdom's price for this finish"}); });
+  if(!out.length) out.push({id:"nf",label:"Normal",short:"Normal",mult:1,note:"Card Kingdom doesn't list this card"});
+  c.vs=out; c.vsKey=key; return out;
+}
+const gameChip = k=>gameOf(k)==="mtg"?`<span class="vchip gm">MTG</span>`:"";
 // cards any demo profile listed from the catalogue, so saved binders (yours and the other profiles') keep them
 PROFILES.forEach(p=>{
   try{ const s=JSON.parse(localStorage.getItem(pkeyFor(p,"binderloop.customcards.v1"))||"null");
-    if(s&&typeof s==="object") Object.keys(s).forEach(k=>{ if(k.indexOf("c_")===0&&s[k]&&s[k].cid&&!CARDS[k]) CARDS[k]=s[k]; }); }catch(e){}
+    if(s&&typeof s==="object") Object.keys(s).forEach(k=>{ const e=s[k]; if(!CARDS[k]&&e&&((k.indexOf("c_")===0&&e.cid)||(k.indexOf("m_")===0&&e.game==="mtg"&&e.mid&&Array.isArray(e.usd)))) CARDS[k]=e; }); }catch(e){}
 });
 // the other demo profiles are collectors too, showing the binder and want list they last saved in this browser
 PROFILES.filter(p=>p!==PROFILE).forEach(p=>{
@@ -288,6 +306,7 @@ USERS.forEach((u,i)=>{
 
 function variantsFor(k){
   const c = CARDS[k];
+  if(c.game==="mtg") return mtgVariantsOf(c);
   if(c.dex){
     const holo = c.rar==="Holo rare";
     return [{id:"unl",label:"Unlimited",short:"Unlimited",mult:1,note:"the common 1999–2000 print"},
@@ -299,7 +318,7 @@ function variantsFor(k){
           {id:"psa10",label:"PSA 10",short:"PSA 10",mult:4.2,note:"gem mint"}];
 }
 function vOf(k,id){ const vs=variantsFor(k); return vs.find(x=>x.id===id) || vs[0]; }
-function valOf(k,id){ return Math.round(CARDS[k].v * vOf(k,id).mult); }
+function valOf(k,id){ const c=CARDS[k], x=c.v*vOf(k,id).mult; return c.game==="mtg"?Math.round(x*100)/100:Math.round(x); }   // Magic cards are often under a dollar, so they keep their cents
 function vchip(k,id){ const v=vOf(k,id); return `<span class="vchip ${v.id}">${v.short}</span>`; }
 function vchipOwner(k,o){ return vchip(k, o.vars ? o.vars[k] : undefined); }
 const sumV = (set,owner)=>set.reduce((t,k)=>t+valOf(k,owner.vars[k]),0);
@@ -398,6 +417,8 @@ function community(k){
 
 const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
 const money = n=>"$"+(Number.isInteger(n)?n.toLocaleString():n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}));
+function askRound0(g,x){ return g==="mtg"?Math.round(x*100)/100:Math.round(x); }                       // a value, to the dollar (Pokémon) or the cent (Magic)
+function askRound(k,x){ return gameOf(k)==="mtg"?Math.max(0.05,Math.round(x*20)/20):Math.max(1,Math.round(x)); }   // an asking price: whole dollars, or 5 cent steps for Magic
 const avail = u => Object.keys(u.cards).filter(k=>(u.cards[k]==="trade"||u.cards[k]==="sell")&&!(u.noTrade&&u.noTrade[k]));
 
 /* ---------- matching ---------- */
@@ -412,13 +433,13 @@ const sum = set=>set.reduce((t,k)=>t+CARDS[k].v,0);
 
 function twoWay(){
   const giveable = avail(me), out=[];
-  for(const u of PARTIES()){
-    const iGive = giveable.filter(k=>u.wants.includes(k));
-    const iGet  = avail(u).filter(k=>me.wants.includes(k));
+  for(const u of PARTIES()) for(const [g] of GAMES){   // a swap stays inside one game, so each game gets its own best trade with a collector
+    const iGive = giveable.filter(k=>gameOf(k)===g&&u.wants.includes(k));
+    const iGet  = avail(u).filter(k=>gameOf(k)===g&&me.wants.includes(k));
     if(!iGive.length||!iGet.length) continue;
     let best=null;
     for(const a of subsets(iGive,2)) for(const b of subsets(iGet,2)){
-      const av_=Math.round(sumV(a,me)*(u.store?u.tradeIn:1)), bv=sumV(b,u), diff=Math.abs(av_-bv);
+      const av_=askRound0(g,sumV(a,me)*(u.store?u.tradeIn:1)), bv=sumV(b,u), diff=Math.abs(av_-bv);
       const fair = 1 - diff/Math.max(av_,bv);
       const score = fair*1000 + Math.min(av_,bv)/50;
       if(!best||score>best.score) best={give:a,get:b,av:av_,bv,diff,fair,score,user:u};
@@ -431,10 +452,12 @@ function loops(){
   const giveable = avail(me), out=[];
   for(const a of USERS) for(const b of USERS){
     if(a===b) continue;
-    const x = giveable.find(k=>a.wants.includes(k));
-    const y = avail(a).find(k=>b.wants.includes(k));
-    const z = avail(b).find(k=>me.wants.includes(k));
-    if(x&&y&&z&&!out.some(l=>l.a===a||l.b===a)) out.push({x,y,z,a,b});
+    for(const [g] of GAMES){   // all three cards in a loop are from the same game
+      const x = giveable.find(k=>gameOf(k)===g&&a.wants.includes(k));
+      const y = avail(a).find(k=>gameOf(k)===g&&b.wants.includes(k));
+      const z = avail(b).find(k=>gameOf(k)===g&&me.wants.includes(k));
+      if(x&&y&&z&&!out.some(l=>l.a===a||l.b===a)){ out.push({x,y,z,a,b}); break; }
+    }
   }
   return out.slice(0,2);
 }
@@ -512,7 +535,7 @@ function listings(){
     if(p.cards[k]!=="sell") return;
     const market=valOf(k,p.vars[k]);
     const factor = p.store ? 1.03+(hsh(p.id+k)%8)/100 : 0.90+(hsh(p.id+k)%16)/100;
-    out.push({id:p.id+"|"+k, k, seller:p, market, price:Math.max(1,Math.round(market*factor)), diff:Math.round((factor-1)*100), dist:km(me,p)});
+    out.push({id:p.id+"|"+k, k, seller:p, market, price:askRound(k,market*factor), diff:Math.round((factor-1)*100), dist:km(me,p)});
   }));
   return out;
 }
@@ -749,7 +772,7 @@ function sendCounter(){
    Desktop site: helpers, card faces, router and shell
    ===================================================================== */
 const esc = s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const isHolo = k=>{ const c=CARDS[k]; return isVintagePrint(c) ? c.rar==="Holo rare" : true; };
+const isHolo = k=>{ const c=CARDS[k]; if(c.game==="mtg") return false; return isVintagePrint(c) ? c.rar==="Holo rare" : true; };
 const first = p=>p.name.split(" ")[0];
 Object.values(CARDS).forEach(c=>{ c.s=c.s.replace(/ · /g,", "); });
 [...USERS,...STORES].forEach(p=>{ ["focus","bio","blurb"].forEach(f=>{ if(p[f]) p[f]=p[f].replace(/ — /g,", ").replace(/—/g,", "); }); });
@@ -796,9 +819,9 @@ const LOGO = `<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"
 
 /* ---------- card faces ---------- */
 // Real artwork is used when the artwork pack is loaded; until then each card gets a generated face.
-const vmark = id=>id&&id!=="unl"&&id!=="raw"?`<span class="vm ${id}" title="${{shadow:"Shadowless",first:"1st Edition",psa9:"PSA 9",psa10:"PSA 10"}[id]||""}"></span>`:"";
+const vmark = id=>id&&id!=="unl"&&id!=="raw"&&id!=="nf"&&id!=="foil"&&id!=="etched"?`<span class="vm ${id}" title="${{shadow:"Shadowless",first:"1st Edition",psa9:"PSA 9",psa10:"PSA 10"}[id]||""}"></span>`:"";
 function cardFace(k,o={}){
-  const c=CARDS[k], holo=isHolo(k), img=IMG[k];
+  const c=CARDS[k], holo=c.game==="mtg"?(o.v==="foil"||o.v==="etched"):isHolo(k), img=IMG[k];
   const set = c.set || c.s.split(", ")[0];
   const inner = img ? `<img src="${img}" alt="" draggable="false">`
     : `<span class="cf-top">${esc(c.n)}</span><span class="cf-art"><i>${esc(c.n[0])}</i></span><span class="cf-foot">${esc(set)}</span>`;
@@ -810,11 +833,12 @@ const vchipOf = (k,owner)=>{ const id=owner&&owner.vars?owner.vars[k]:undefined;
 const holoChip = k=>isHolo(k)?`<span class="vchip holo">Holo</span>`:"";
 
 /* ---------- modal + toast ---------- */
+let MODAL_KIND=null;   // "list" or "add" while one of the search pickers is open, so the game switch can redraw it
 function openModal(html,o={}){
-  const m=$("#modal"); m.innerHTML=`<div class="scrim" onclick="closeModal()"></div><div class="mdl${o.wide?" wide":""}" role="dialog" aria-modal="true" aria-label="${esc(o.label||"Dialog")}" tabindex="-1">${html}</div>`;
+  MODAL_KIND=null; const m=$("#modal"); m.innerHTML=`<div class="scrim" onclick="closeModal()"></div><div class="mdl${o.wide?" wide":""}" role="dialog" aria-modal="true" aria-label="${esc(o.label||"Dialog")}" tabindex="-1">${html}</div>`;
   m.classList.add("on"); document.body.classList.add("noscroll"); const f=m.querySelector("[data-autofocus]")||m.querySelector(".mdl"); f.focus({preventScroll:true});
 }
-function closeModal(){ const m=$("#modal"); m.classList.remove("on"); m.innerHTML=""; document.body.classList.remove("noscroll"); }
+function closeModal(){ MODAL_KIND=null; const m=$("#modal"); m.classList.remove("on"); m.innerHTML=""; document.body.classList.remove("noscroll"); }
 const closeSheet = closeModal;
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
 function toast(text,id){
@@ -870,9 +894,9 @@ try{ const t=localStorage.getItem("binderloop.web.theme"); if(t) document.docume
 const isDark = ()=>{ const t=document.documentElement.getAttribute("data-theme"); return t?t==="dark":!!(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches); };
 
 /* ---------- router ---------- */
-const PAGES=["home","market","social","search","mtg","db","you"];
-const TABS={market:["listings","selling","leads","trades","messages"],social:["nights","people","stores"],mtg:["singles","sealed"],you:["profile","binder"]};
-const S={view:"landing",page:"home",tab:null,sel:null,last:{market:"listings",social:"nights",mtg:"singles",you:"profile"}};
+const PAGES=["home","market","social","search","db","you"];
+const TABS={market:["listings","selling","leads","trades","messages"],social:["nights","people","stores"],you:["profile","binder"]};
+const S={view:"landing",page:"home",tab:null,sel:null,last:{market:"listings",social:"nights",you:"profile"}};
 const hashOf2 = ()=>S.view==="landing"?"#/":"#/app/"+[S.page,S.tab,S.sel].filter(x=>x!=null&&x!=="").map(x=>encodeURIComponent(x)).join("/");
 function parseHash(){
   let h=""; try{ h=(location.hash||"").replace(/^#\/?/,""); }catch(e){}
@@ -903,11 +927,11 @@ function render(top){
   if(fid){ const n=document.getElementById(fid); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(e){} } }
   window.scrollTo(0,top?0:y);
   const log=$("#chatlog"); if(log) log.scrollTop=log.scrollHeight;
-  document.title = S.view==="landing" ? "Binder Loop: buy, sell and trade Pokémon cards near you" : "Binder Loop / "+({home:"Home",market:"Marketplace",social:"Social",search:"Search",mtg:"Magic",db:"Database",you:"You"})[S.page];
+  document.title = S.view==="landing" ? "Binder Loop: buy, sell and trade Pokémon cards near you" : "Binder Loop / "+({home:"Home",market:"Marketplace",social:"Social",search:"Search",db:"Database",you:"You"})[S.page];
 }
 
 /* ---------- app shell ---------- */
-const NAV=[["home","Home","home"],["market","Marketplace","market"],["social","Social","social"],["search","Search","search"],["mtg","Magic","grid"],["db","Database","db"],["you","You","you"]];
+const NAV=[["home","Home","home"],["market","Marketplace","market"],["social","Social","social"],["search","Search","search"],["db","Database","db"],["you","You","you"]];
 function navBadge(p){
   if(p==="market"){ const n=OFFERS.filter(needsMe).length; return n?`<span class="badge" title="Offers waiting for your reply">${n}</span>`:""; }
   if(p==="social"){ const n=allNights().filter(x=>nightPlan(x.key).going===true).length; return n?`<span class="badge soft" title="Nights you're going to">${n}</span>`:""; }
@@ -940,7 +964,7 @@ function appShell(){
 }
 function globalSearch(v){ F2.q=(v||"").trim(); F2.limit=24; go("search"); const g=$("#gs"); if(g) g.value=""; }
 function pageHTML(){
-  return ({home:homePage,market:marketPage,social:socialPage,search:searchPage,mtg:mtgPage,db:dbPage,you:youPage})[S.page]();
+  return ({home:homePage,market:marketPage,social:socialPage,search:searchPage,db:dbPage,you:youPage})[S.page]();
 }
 function pageHead(title,sub,actions){
   return `<div class="ph"><div><h1>${title}</h1>${sub?`<p>${sub}</p>`:""}</div>${actions?`<div class="ph-actions">${actions}</div>`:""}</div>`;
@@ -970,7 +994,7 @@ function homePage(){
   const nextN = going[0] || nights.find(n=>n.st.id===homeStore) || nights[0];
   const sub=[wantN?`${plural(wantN,"card")} from your want list ${wantN===1?"is":"are"} for sale nearby`:"",need.length?`${plural(need.length,"offer")} ${need.length===1?"needs":"need"} your reply`:""].filter(Boolean).join(", and ");
   const lt=l=>`<button class="tile" onclick="openListing('${l.id}')"><span class="tile-art tilt">${faceOf(l.k,l.seller)}<span class="sticker">${money(l.price)}</span></span>
-      <span class="tile-b"><b>${CARDS[l.k].n}</b><span class="tile-s">${l.seller.name}, ${kmTxt(l.dist)}</span><span class="tile-t">${vchipOf(l.k,l.seller)}${l.diff<=-6?`<span class="tag hit">${-l.diff}% under market</span>`:""}</span></span></button>`;
+      <span class="tile-b"><b>${CARDS[l.k].n}</b><span class="tile-s">${l.seller.name}, ${kmTxt(l.dist)}</span><span class="tile-t">${gameChip(l.k)}${vchipOf(l.k,l.seller)}${l.diff<=-6?`<span class="tag hit">${-l.diff}% under market</span>`:""}</span></span></button>`;
   return pageHead(`${greet}, ${first(me)}`, sub?sub+".":"Browse what's for sale nearby, or list a card of your own.",
       `<button class="btn" onclick="go('market','listings')">Browse cards for sale</button>`)
   + leadBanner() + `<div class="stats">
@@ -1007,18 +1031,18 @@ function tradeItems(){ return [...twoWay().map((m,i)=>({kind:"swap",m,i})),...lo
 function marketPage(){
   const trades=twoWay().length+loops().length, reply=OFFERS.filter(needsMe).length;
   const head = pageHead("Marketplace","Buy and sell cards with collectors and stores near you, or trade when a swap suits you better.")
-    + tabBar("market",[["listings","Buy",listings().length],["selling","Sell",myListings().length],["leads",`Leads <span class="prem-badge">${ic("spark",11)}Premium</span>`,isPremium()?newLeads().length||"":""],["trades","Trade",trades],["messages","Messages",reply||""]]);
+    + tabBar("market",[["listings","Buy",listings().filter(l=>gameOf(l.k)===GM.game).length],["selling","Sell",myListings().length],["leads",`Leads <span class="prem-badge">${ic("spark",11)}Premium</span>`,isPremium()?newLeads().length||"":""],["trades","Trade",trades],["messages","Messages",reply||""]]);
   return head + (S.tab==="selling"?sellPage():S.tab==="leads"?leadsPage():S.tab==="messages"?messagesPage():S.tab==="trades"?tradesPage():listingsPage());
 }
 function selTrade(i){ swapLoc=null; go("market","trades",i); }
 function setSwapLoc(id){ swapLoc=id; render(); }
 function tradeRow(it,idx,active){
   if(it.kind==="loop"){ const l=it.l;
-    return `<button class="trow${active?" on":""}" onclick="selTrade(${idx})"><div class="tr-h">${av(l.a)}<div><b>Three-way loop</b><span>with ${l.a.name} and ${l.b.name}</span></div>${pill("Loop","soft")}</div>
+    return `<button class="trow${active?" on":""}" onclick="selTrade(${idx})"><div class="tr-h">${av(l.a)}<div><b>Three-way loop${gameChip(l.x)}</b><span>with ${l.a.name} and ${l.b.name}</span></div>${pill("Loop","soft")}</div>
       <div class="tr-f">${facesOf([l.x],me)}${ic("loop",16)}${facesOf([l.z],l.b)}<span class="tr-c">nobody needs to want each other's card</span></div></button>`; }
   const m=it.m,u=m.user,even=m.diff<=Math.max(m.av,m.bv)*.06,pct=Math.round(m.fair*100),owed=m.bv-m.av;
   return `<button class="trow${active?" on":""}" onclick="selTrade(${idx})">
-    <div class="tr-h">${av(u)}<div><b>${u.name}</b><span>${u.store?"Store in "+u.suburb:u.suburb+", "+kmTxt(km(me,u))}</span></div>${pill(u.store?(even?"Even trade-in":pct+"% trade-in"):(even?"Even swap":pct+"% match"),even?"":"soft")}</div>
+    <div class="tr-h">${av(u)}<div><b>${u.name}${gameChip(m.give[0])}</b><span>${u.store?"Store in "+u.suburb:u.suburb+", "+kmTxt(km(me,u))}</span></div>${pill(u.store?(even?"Even trade-in":pct+"% trade-in"):(even?"Even swap":pct+"% match"),even?"":"soft")}</div>
     <div class="tr-f">${facesOf(m.give,me)}${ic("swap",16)}${facesOf(m.get,u)}<span class="tr-c">${owed>0?"you add "+money(owed):owed<0?(u.store?"store credit ":"they add ")+money(-owed):"no cash"}</span></div></button>`;
 }
 function tradesPage(){
@@ -1066,7 +1090,8 @@ function tradeDetail(it){
 /* ---------- Listings ---------- */
 const F1={seller:"all",wants:false,min:"",max:"",sort:"best"};
 function listingsPage(){
-  const all=listings(), wantN=all.filter(l=>me.wants.includes(l.k)).length;
+  if(GM.game==="mtg" && MTG.state!=="ready") return mtgGate(gameSwitch());
+  const all=listings().filter(l=>gameOf(l.k)===GM.game), wantN=all.filter(l=>me.wants.includes(l.k)).length;
   let L=all.slice();
   if(F1.seller==="people") L=L.filter(l=>!l.seller.store); if(F1.seller==="stores") L=L.filter(l=>l.seller.store);
   if(F1.wants) L=L.filter(l=>me.wants.includes(l.k));
@@ -1086,12 +1111,13 @@ function listingsPage(){
       <button class="link" style="margin-top:14px" onclick="Object.assign(F1,{seller:'all',wants:false,min:'',max:'',sort:'best'});cfReset('buy');render()">Clear filters</button>
     </aside>
     <section>
+      ${gameSwitch()}
       ${cfBar("buy",()=>render(),{sets:all.map(l=>cfSetKey(l.k)).filter(Boolean),noSealed:"Sealed product isn't in the Buy feed yet. Find it in Search.",gradedTip:"Listings in a PSA grade"})}
       <div class="rbar"><h2>${plural(L.length,"listing")}</h2><label class="sel">Sort<select onchange="F1.sort=this.value;render()" aria-label="Sort listings">${[["best","Best for you"],["low","Price, low to high"],["high","Price, high to low"],["deal","Biggest discount"],["near","Nearest"]].map(([v,l])=>`<option value="${v}"${F1.sort===v?" selected":""}>${l}</option>`).join("")}</select></label></div>
       ${L.length?`<div class="tiles">${L.map(l=>{ const s=l.seller, req=isRequested(l.id);
         return `<button class="tile" onclick="openListing('${l.id}')"><span class="tile-art tilt">${faceOf(l.k,s)}<span class="sticker">${money(l.price)}</span></span>
           <span class="tile-b"><b>${CARDS[l.k].n}</b><span class="tile-s">${s.name}${s.store?"":", "+s.suburb}, ${kmTxt(l.dist)}</span>
-          <span class="tile-t">${vchipOf(l.k,s)}${holoChip(l.k)}${me.wants.includes(l.k)?`<span class="tag want">On your want list</span>`:""}${l.diff<=-6?`<span class="tag hit">${-l.diff}% under market</span>`:""}${req?`<span class="tag">Requested</span>`:""}</span></span></button>`; }).join("")}</div>`
+          <span class="tile-t">${gameChip(l.k)}${vchipOf(l.k,s)}${holoChip(l.k)}${me.wants.includes(l.k)?`<span class="tag want">On your want list</span>`:""}${l.diff<=-6?`<span class="tag hit">${-l.diff}% under market</span>`:""}${req?`<span class="tag">Requested</span>`:""}</span></span></button>`; }).join("")}</div>`
         :emptyBox("No listings match those filters","Try widening the price range or clearing a filter.")}
     </section></div>`;
 }
@@ -1280,6 +1306,7 @@ function presetList(key,list,mode){
   saveNights(); render();
 }
 function nightSearch(key,q){
+  if(GM.game==="mtg") return mtgNightSearch(key,q);
   const box=$("#nres"); if(!box) return; q=q.trim().toLowerCase(); const p=nightPlan(key), f=cfState("night");
   if(!q && !cfActive(f)){ box.innerHTML=""; return; }
   const hits=Object.keys(CARDS).filter(k=>!p.seek.includes(k)&&!me.wants.includes(k)&&(!q||CARDS[k].n.toLowerCase().includes(q)||(CARDS[k].dex&&String(CARDS[k].dex)===q))&&cfPass(f,cfKeyItem(k,cfGradedHeld)))
@@ -1308,8 +1335,9 @@ function nightDetail(n){
         <div class="chips-l" style="margin-bottom:10px"><button class="chip" onclick="presetList('${key}','seek','wants')">Add my whole want list (${me.wants.length})</button><button class="chip" onclick="presetList('${key}','seek','clear')">Clear</button></div>
         ${wantList.map(k=>pickRow(key,"seek",k,{vars:{}},p.seek.includes(k),me.wants.includes(k)?CARDS[k].s:"Added for this night")).join("")}
         <h4 class="sub">Looking for something else?</h4>
+        ${gameSwitch()}
         <label class="field"><input id="nq" data-keep placeholder="Search a card to add for this night" autocomplete="off" oninput="nightSearch('${key}',this.value)"></label>
-        ${cfBar("night",()=>nightSearch(key,($("#nq")||{}).value||""),{sets:Object.keys(CARDS).map(cfSetKey).filter(Boolean),noSealed:"Trade nights are for cards",gradedTip:"Cards someone nearby has in a PSA grade"})}<div id="nres"></div></section></div>`;
+        ${cfBar("night",()=>nightSearch(key,($("#nq")||{}).value||""),{sets:GM.game==="mtg"?undefined:Object.keys(CARDS).map(cfSetKey).filter(Boolean),noSealed:"Trade nights are for cards",gradedTip:"Cards someone nearby has in a PSA grade"})}<div id="nres"></div></section></div>`;
   }
   const there=[]; ppl.forEach(u=>avail(u).forEach(k=>{ if(mySeek.includes(k)) there.push({k,u}); })); Object.keys(st.cards).forEach(k=>{ if(mySeek.includes(k)) there.push({k,u:st}); });
   const wantMine=[]; [...ppl,st].forEach(u=>myBring.forEach(k=>{ if(u.wants.includes(k)) wantMine.push({k,u}); }));
@@ -1437,7 +1465,9 @@ function searchResults(){
 const TYPES=["All","Fire","Water","Grass","Electric","Psychic","Fighting","Normal","Poison","Ghost","Rock","Ground","Bug","Ice","Dragon","Fairy"];
 const activeFilters = ()=>[F2.type!=="All"&&["type",F2.type],F2.holo&&["holo","Holographic"],F2.stock&&["stock","Available to trade or buy"],
   (F2.min!==""||F2.max!=="")&&["price",F2.min!==""&&F2.max!==""?`${money(+F2.min)} to ${money(+F2.max)}`:F2.min!==""?`${money(+F2.min)} and up`:`Up to ${money(+F2.max)}`]].filter(Boolean);
-function setF2(patch){ Object.assign(F2,patch,{limit:24}); render(); }
+// "later" is for the price boxes: Chrome fires their change event again while render() removes the box, so render once the event has finished
+const renderSoon = ()=>{ clearTimeout(renderSoon._t); renderSoon._t=setTimeout(render,0); };
+function setF2(patch,later){ Object.assign(F2,patch,{limit:24}); later?renderSoon():render(); }
 function clearFilter(id){ setF2(id==="type"?{type:"All"}:id==="price"?{min:"",max:""}:{[id]:false}); }
 function toggleFilters(v){ F2.open = v==null ? !F2.open : v; render(); if(F2.open){ const f=$(".fpop button"); if(f) f.focus({preventScroll:true}); } }
 document.addEventListener("click",e=>{
@@ -1476,7 +1506,7 @@ function searchPage(){
 
 /* ---------- Card detail ---------- */
 const CM={k:null,v:null,range:12};
-function openCard(k,v){ CM.k=k; CM.v=(v&&variantsFor(k).some(x=>x.id===v))?v:(me.vars[k]||variantsFor(k)[0].id); if(!variantsFor(k).some(x=>x.id===CM.v)) CM.v=variantsFor(k)[0].id; renderCard(); }
+function openCard(k,v){ if(gameOf(k)==="mtg"){ mtgOpenKey(k,v); return; } CM.k=k; CM.v=(v&&variantsFor(k).some(x=>x.id===v))?v:(me.vars[k]||variantsFor(k)[0].id); if(!variantsFor(k).some(x=>x.id===CM.v)) CM.v=variantsFor(k)[0].id; renderCard(); }
 function setCardVar(v){ CM.v=v; renderCard(); }
 function setCardRange(r){ CM.range=r; renderCard(); }
 function priceChart(pts){
@@ -1523,7 +1553,7 @@ function openAddCard(q){
 function youPage(){
   return pageHead("You",null) + tabBar("you",[["profile","Profile"],["binder","Binder",Object.keys(me.cards).length]]) + (S.tab==="binder"?binderPage():profilePage());
 }
-let bFilter="all", bSort="value";
+let bFilter="all", bSort="value", bGame="all";
 let pGrid="sale";
 function gridTile(k,o){
   const c=CARDS[k], v=o.v, sold=o.sold, n=o.n||0;
@@ -1568,20 +1598,20 @@ function profilePage(){
 function copyProfile(){ try{ navigator.clipboard.writeText(location.href.split("#")[0]+"#/app/you/profile"); toast("Profile link copied."); }catch(e){ toast("Couldn't copy the link in this browser."); } }
 function binderPage(){
   const owned=Object.keys(me.cards), total=binderValue(), counts={own:0,trade:0,sell:0}; owned.forEach(k=>counts[me.cards[k]]++);
-  let list=owned.filter(k=>bFilter==="all"||me.cards[k]===bFilter);
+  let list=owned.filter(k=>(bFilter==="all"||me.cards[k]===bFilter)&&(bGame==="all"||gameOf(k)===bGame));
   const sorters={value:(a,b)=>valOf(b,me.vars[b])-valOf(a,me.vars[a]),name:(a,b)=>CARDS[a].n.localeCompare(CARDS[b].n),status:(a,b)=>me.cards[a].localeCompare(me.cards[b])};
   list.sort(sorters[bSort]);
   const th=(id,l,cls="")=>`<th class="${cls}" ${bSort===id?'aria-sort="ascending"':""}><button class="th-b${bSort===id?" on":""}" onclick="bSort='${id}';render()">${l}${bSort===id?'<i class="srt"></i>':""}</button></th>`;
   const wants=[...new Set([...me.wants])].sort((a,b)=>CARDS[b].v-CARDS[a].v);
   return `<div class="cols-bind"><section><div class="rbar"><h2>${plural(owned.length,"card")}, ${money(Math.round(total))}</h2>
-      <div class="rbar-r"><div class="chips-l">${[["all","All ("+owned.length+")"],["own","Keeping ("+counts.own+")"],["trade","Will trade ("+counts.trade+")"],["sell","Selling ("+counts.sell+")"]].map(([id,l])=>`<button class="chip${bFilter===id?" on":""}" aria-pressed="${bFilter===id}" onclick="bFilter='${id}';render()">${l}</button>`).join("")}</div><button class="btn primary sm" onclick="openAddCard()">${ic("plus",15)}Add a card</button></div></div>
+      <div class="rbar-r"><div class="chips-l" role="group" aria-label="Game">${[["all","All games"],...GAMES].map(([id,l])=>`<button class="chip${bGame===id?" on":""}" aria-pressed="${bGame===id}" onclick="bGame='${id}';render()">${l}</button>`).join("")}</div><div class="chips-l">${[["all","All ("+owned.length+")"],["own","Keeping ("+counts.own+")"],["trade","Will trade ("+counts.trade+")"],["sell","Selling ("+counts.sell+")"]].map(([id,l])=>`<button class="chip${bFilter===id?" on":""}" aria-pressed="${bFilter===id}" onclick="bFilter='${id}';render()">${l}</button>`).join("")}</div><button class="btn primary sm" onclick="openAddCard()">${ic("plus",15)}Add a card</button></div></div>
     <div class="tbl-wrap"><table class="tbl bind"><thead><tr>${th("name","Card")}<th>Printing</th>${th("status","Status")}${th("value","Value","num")}</tr></thead><tbody>
-    ${list.map(k=>`<tr><td><button class="tcell" onclick="openCard('${k}')"><span class="fw sm">${faceOf(k,me,{sm:true})}</span><span><b>${CARDS[k].n}</b><em>${esc(CARDS[k].s)}</em></span></button></td>
-      <td><select class="mini-sel" aria-label="Printing of ${esc(CARDS[k].n)}" onchange="setVar('${k}',this.value)">${variantsFor(k).map(v=>`<option value="${v.id}"${me.vars[k]===v.id?" selected":""}>${v.label}, ${money(Math.round(CARDS[k].v*v.mult))}</option>`).join("")}</select></td>
+    ${list.map(k=>`<tr><td><button class="tcell" onclick="openCard('${k}')"><span class="fw sm">${faceOf(k,me,{sm:true})}</span><span><b>${CARDS[k].n}${gameChip(k)}</b><em>${esc(CARDS[k].s)}</em></span></button></td>
+      <td><select class="mini-sel" aria-label="Printing of ${esc(CARDS[k].n)}" onchange="setVar('${k}',this.value)">${variantsFor(k).map(v=>`<option value="${v.id}"${me.vars[k]===v.id?" selected":""}>${v.label}, ${money(valOf(k,v.id))}</option>`).join("")}</select></td>
       <td><div class="segc" role="group" aria-label="Status of ${esc(CARDS[k].n)}">${[["own","Keeping"],["trade","Will trade"],["sell","Selling"]].map(([id,l])=>`<button class="${me.cards[k]===id?"on":""}" aria-pressed="${me.cards[k]===id}" onclick="setStatus('${k}','${id}')">${l}</button>`).join("")}</div></td>
       <td class="num"><b>${money(valOf(k,me.vars[k]))}</b>${me.cards[k]==="sell"?`<button class="asklink" onclick="LD.k=null;openListCard('${k}')">Asking ${money(askOf(k))}</button>`:""}</td></tr>`).join("")}</tbody></table></div></section>
     <aside class="panel wantp"><div class="panel-h"><h2>Want list</h2><span class="muted">${wants.length}</span></div>
-      ${wants.map(k=>`<div class="lrow"><span class="fw sm">${cardFace(k,{sm:true})}</span><div><b>${CARDS[k].n}</b><span>${holdersOf(k)+stockedAt(k)?plural(holdersOf(k)+stockedAt(k),"seller")+" nearby":"Nobody has it yet"}</span></div><button class="icon-btn sm" onclick="toggleWant('${k}')" aria-label="Remove ${esc(CARDS[k].n)} from want list">${ic("x",15)}</button></div>`).join("")||emptyBox("Your want list is empty","Add cards from Search.")}
+      ${wants.map(k=>`<div class="lrow"><span class="fw sm">${cardFace(k,{sm:true})}</span><div><b>${CARDS[k].n}${gameChip(k)}</b><span>${holdersOf(k)+stockedAt(k)?plural(holdersOf(k)+stockedAt(k),"seller")+" nearby":"Nobody has it yet"}</span></div><button class="icon-btn sm" onclick="toggleWant('${k}')" aria-label="Remove ${esc(CARDS[k].n)} from want list">${ic("x",15)}</button></div>`).join("")||emptyBox("Your want list is empty","Add cards from Search.")}
       <button class="btn block" style="margin-top:12px" onclick="openAddCard()">${ic("plus",15)}Add to want list</button></aside></div>`;
 }
 
@@ -1597,14 +1627,15 @@ let SELL={ask:{},noTrade:{},sold:[]};
       if(s.cards&&typeof s.cards==="object"){ const c={}; for(const k in s.cards) if(CARDS[k]&&["own","trade","sell"].includes(s.cards[k])) c[k]=s.cards[k]; me.cards=c; }
       if(s.vars&&typeof s.vars==="object") for(const k in s.vars) if(CARDS[k]&&variantsFor(k).some(v=>v.id===s.vars[k])) me.vars[k]=s.vars[k];
       if(Array.isArray(s.wants)) me.wants=s.wants.filter(k=>CARDS[k]);
-      SELL.ask=s.ask&&typeof s.ask==="object"?s.ask:{}; SELL.noTrade=s.noTrade&&typeof s.noTrade==="object"?s.noTrade:{}; SELL.sold=Array.isArray(s.sold)?s.sold.filter(x=>x&&CARDS[x.k]):[]; if(typeof s.premium==="boolean") SELL.premium=s.premium; if(s.leads&&typeof s.leads==="object") SELL.leads=s.leads;
+      SELL.ask=s.ask&&typeof s.ask==="object"?s.ask:{}; SELL.noTrade=s.noTrade&&typeof s.noTrade==="object"?s.noTrade:{}; SELL.sold=Array.isArray(s.sold)?s.sold.filter(x=>x&&CARDS[x.k]):[]; if(s.mtgSeeded) SELL.mtgSeeded=true; if(typeof s.premium==="boolean") SELL.premium=s.premium; if(s.leads&&typeof s.leads==="object") SELL.leads=s.leads;
     }
   }catch(e){}
   Object.keys(me.cards).forEach(k=>{ if(me.cards[k]==="sell"&&!(SELL.ask[k]>0)) SELL.ask[k]=valOf(k,me.vars[k]); });
   for(const k in SELL.ask) if(me.cards[k]!=="sell") delete SELL.ask[k];
   me.noTrade=SELL.noTrade;
 })();
-function saveSell(){ try{ localStorage.setItem(SKEY,JSON.stringify({ask:SELL.ask,noTrade:SELL.noTrade,sold:SELL.sold,premium:SELL.premium,leads:SELL.leads,cards:me.cards,vars:me.vars,wants:me.wants})); }catch(e){} }
+function saveSell(){ try{ localStorage.setItem(SKEY,JSON.stringify({ask:SELL.ask,noTrade:SELL.noTrade,sold:SELL.sold,premium:SELL.premium,leads:SELL.leads,mtgSeeded:SELL.mtgSeeded,cards:me.cards,vars:me.vars,wants:me.wants})); }catch(e){}
+  mtgPersistRefs(); }
 const myListings = ()=>Object.keys(me.cards).filter(k=>me.cards[k]==="sell").sort((a,b)=>(SELL.ask[b]||0)-(SELL.ask[a]||0));
 const askOf = k=>SELL.ask[k]||valOf(k,me.vars[k]);
 const buyersFor = k=>PARTIES().filter(p=>p.wants.includes(k));
@@ -1618,33 +1649,33 @@ const LD={k:null,v:null,price:null,trade:true};
 function openListCard(k){
   if(k&&CARDS[k]){
     const fresh=LD.k!==k; LD.k=k;
-    if(fresh){ LD.v=me.vars[k]||variantsFor(k)[0].id; LD.price=me.cards[k]==="sell"?askOf(k):valOf(k,LD.v); LD.trade=!SELL.noTrade[k]; }
+    if(fresh){ LD.v=me.vars[k]||variantsFor(k)[0].id; LD.price=me.cards[k]==="sell"?askOf(k):askRound(k,valOf(k,LD.v)); LD.trade=!SELL.noTrade[k]; }
   } else if(k===null){ LD.k=null; }
   renderListModal();
 }
 function ldSet(patch){ Object.assign(LD,patch); renderListModal(); }
-function ldVar(v){ const oldMarket=valOf(LD.k,LD.v), p=pctVs(LD.price,oldMarket); LD.v=v; LD.price=Math.max(1,Math.round(valOf(LD.k,v)*(1+p/100))); renderListModal(); }
+function ldVar(v){ const oldMarket=valOf(LD.k,LD.v), p=pctVs(LD.price,oldMarket); LD.v=v; LD.price=askRound(LD.k,valOf(LD.k,v)*(1+p/100)); renderListModal(); }
 function renderListModal(){
   if(!LD.k){
-    if(CAT.state!=="ready"){
-      if(CAT.state!=="error") catLoad(()=>{ const m=$("#modal"); if(!LD.k && m && m.classList.contains("on")) renderListModal(); });
-      openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left"><h2>List an item for sale</h2>
-        ${CAT.state==="error"?emptyBox("Couldn't load the catalogue","The file data/catalog.js wasn't found.",`<button class="btn primary" onclick="dbRetryCatalog();renderListModal()">Try again</button>`)
-          :`<div class="empty" role="status"><b>Loading the catalogue…</b><p>About 20,000 cards. This only happens the first time.</p></div>`}</div>`,{label:"List an item"});
-      return;
+    const mtg=GM.game==="mtg", st=mtg?MTG.state:CAT.state;
+    const head=`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left"><h2>List an item for sale</h2>${gameSwitch()}`;
+    if(st!=="ready"){
+      if(st!=="error") (mtg?mtgLoad:catLoad)(()=>{ const m=$("#modal"); if(!LD.k && m && m.classList.contains("on")) renderListModal(); });
+      openModal(head+(mtg?mtgGateBody("renderListModal()"):st==="error"?emptyBox("Couldn't load the catalogue","The file data/catalog.js wasn't found.",`<button class="btn primary" onclick="dbRetryCatalog();renderListModal()">Try again</button>`)
+        :`<div class="empty" role="status"><b>Loading the catalogue…</b><p>About 20,000 cards. This only happens the first time.</p></div>`)+`</div>`,{label:"List an item"});
+      MODAL_KIND="list"; return;
     }
-    openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left">
-      <h2>List an item for sale</h2><p class="muted">Search for any card or sealed product, or pick from your binder below.</p>
+    openModal(head+`<p class="muted">${mtg?"Search any Magic card or sealed product":"Search for any card or sealed product"}, or pick from your binder below.</p>
       <div class="bigsearch" style="margin:14px 0">${ic("search",18)}<input id="psq" data-autofocus placeholder="Search any card or sealed product" autocomplete="off" oninput="psQuery(this.value)" aria-label="Search cards and sealed product"></div>
       ${cfBar("list",()=>psQuery(($("#psq")||{}).value||""),{gradedTip:"Your graded cards, and cards that come in PSA grades"})}
       <div id="ps-res" class="dbres" style="margin-bottom:6px"></div><div id="ps-own"></div>
       <div class="mdl-actions left"><button class="btn" onclick="closeModal()">Cancel</button></div></div>`,{wide:true,label:"List an item"});
-    psQuery("");
+    MODAL_KIND="list"; psQuery("");
     return;
   }
   const k=LD.k, c=CARDS[k], market=valOf(k,LD.v), p=pctVs(LD.price,market), comps=comparables(k,LD.v), buyers=buyersFor(k), editing=me.cards[k]==="sell";
   const chip=(label,price)=>`<button class="chip${LD.price===price?" on":""}" aria-pressed="${LD.price===price}" onclick="ldSet({price:${price}})">${label}</button>`;
-  const r=m=>Math.max(1,Math.round(market*m));
+  const r=m=>askRound(k,market*m), mtgk=c.game==="mtg";
   const hint = comps.length ? `The cheapest ${vOf(k,LD.v).label.toLowerCase()} copy nearby is <b>${money(comps[0].price)}</b> from ${comps[0].seller.name}. ${LD.price<=comps[0].price?"You'd be the cheapest listing.":"Buyers will see theirs first when sorting by price."}`
     : `Nobody nearby is selling this printing right now, so yours would be the only one listed.`;
   openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button>
@@ -1652,8 +1683,8 @@ function renderListModal(){
   <div class="mdl-info"><h2>${editing?"Edit your listing":"List "+c.n}</h2><p class="muted">${esc(c.s)}</p>
     <h3 class="sub">Printing</h3><div class="chips-l">${variantsFor(k).map(v=>`<button class="chip${LD.v===v.id?" on":""}" aria-pressed="${LD.v===v.id}" onclick="ldVar('${v.id}')">${v.label}</button>`).join("")}</div>
     <h3 class="sub">Asking price</h3>
-    <div class="priceset"><span class="cur">$</span><input id="ldp" type="number" min="1" step="1" inputmode="numeric" aria-label="Asking price in dollars" value="${LD.price}" onchange="ldSet({price:Math.max(1,Math.round(+this.value||1))})"><span class="muted">${p===0?"Same as the market value":vsText(p).replace("market","the market value of "+money(market))}</span></div>
-    <div class="chips-l" style="margin-top:10px">${chip("Market value",market)}${chip("5% under",r(.95))}${chip("10% under",r(.9))}${chip("5% over",r(1.05))}</div>
+    <div class="priceset"><span class="cur">$</span><input id="ldp" type="number" min="${mtgk?0.05:1}" step="${mtgk?0.05:1}" inputmode="${mtgk?"decimal":"numeric"}" aria-label="Asking price in dollars" value="${LD.price}" onchange="ldSet({price:askRound(LD.k,+this.value||1)})"><span class="muted">${p===0?"Same as the market value":vsText(p).replace("market","the market value of "+money(market))}</span></div>
+    <div class="chips-l" style="margin-top:10px">${chip("Market value",r(1))}${chip("5% under",r(.95))}${chip("10% under",r(.9))}${chip("5% over",r(1.05))}</div>
     <p class="note">${hint}</p>
     <button class="fsw${LD.trade?" on":""}" role="switch" aria-checked="${LD.trade}" onclick="ldSet({trade:!LD.trade})" style="margin-top:12px"><span>Also open to trade offers<em class="fsw-s">People can offer cards instead of cash</em></span><i></i></button>
     <div class="handover">${ic("tag",18)}<span>${buyers.length?`<b>${plural(buyers.length,"collector")}${buyers.some(b=>b.store)?" and stores":""} nearby</b> have this on their want list and will see your listing.`:"Your listing shows in Buy for everyone nearby, and in search results for this card."}</span></div>
@@ -1690,7 +1721,7 @@ function sellPage(){
     <div class="rbar"><h2>Your listings</h2><button class="btn primary" onclick="openListCard(null)">${ic("plus",16)}List an item</button></div>
     ${mine.length?`<div class="tbl-wrap"><table class="tbl sellt"><thead><tr><th>Card</th><th class="num">Asking</th><th>Compared to market</th><th>Interested</th><th>Open to trades</th><th></th></tr></thead><tbody>
       ${mine.map(k=>{ const a=askOf(k), m=valOf(k,me.vars[k]), p=pctVs(a,m), b=buyersFor(k), comp=comparables(k,me.vars[k]||variantsFor(k)[0].id)[0];
-        return `<tr><td><button class="tcell" onclick="openCard('${k}')"><span class="fw sm">${faceOf(k,me,{sm:true})}</span><span><b>${CARDS[k].n}</b><em>${vOf(k,me.vars[k]).label}, ${esc(CARDS[k].s)}</em></span></button></td>
+        return `<tr><td><button class="tcell" onclick="openCard('${k}')"><span class="fw sm">${faceOf(k,me,{sm:true})}</span><span><b>${CARDS[k].n}${gameChip(k)}</b><em>${vOf(k,me.vars[k]).label}, ${esc(CARDS[k].s)}</em></span></button></td>
           <td class="num"><span class="sticker sm">${money(a)}</span></td>
           <td><span class="${p>5?"warnt":p<0?"goodt":""}">${vsText(p)}</span>${comp?`<em class="sub-t">Cheapest nearby ${money(comp.price)}</em>`:`<em class="sub-t">Only one listed nearby</em>`}</td>
           <td>${b.length?`<span class="stack">${b.slice(0,3).map(u=>av(u,"xs")).join("")}</span><em class="sub-t">${b.length} want it ${leadLink(k)}</em>`:`<span class="muted">Nobody yet</span>`}</td>

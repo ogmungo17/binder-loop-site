@@ -18,9 +18,9 @@ function cfReset(ctx){ Object.assign(cfState(ctx), {set:"all", holo:false, seale
 function cfCat(k){ const c=CARDS[k]; if(!c || CAT.state!=="ready") return null; return CAT.byId.get(c.cid || CAT.legacy[k]) || null; }
 const cfRarHolo = r => !!r && !/^(Common|Uncommon|Rare|Promo)$/.test(r);
 const cfRarAlt = r => /Illustration Rare|Trainer Gallery/.test(r||"");
-function cfHoloKey(k){ const cc=cfCat(k); return cc ? cfRarHolo(cc.rarity) : isHolo(k); }
-function cfAltKey(k){ const cc=cfCat(k); return /alt art/i.test(CARDS[k].s||"") || !!(cc && cfRarAlt(cc.rarity)); }
-function cfSetKey(k){ const cc=cfCat(k); return cc ? cc.set.id : ""; }
+function cfHoloKey(k){ if(gameOf(k)==="mtg") return !!(CARDS[k].usd[1]||CARDS[k].usd[2]); const cc=cfCat(k); return cc ? cfRarHolo(cc.rarity) : isHolo(k); }
+function cfAltKey(k){ if(gameOf(k)==="mtg") return !!CARDS[k].var && MTG_ALT_RX.test(CARDS[k].var); const cc=cfCat(k); return /alt art/i.test(CARDS[k].s||"") || !!(cc && cfRarAlt(cc.rarity)); }
+function cfSetKey(k){ if(gameOf(k)==="mtg") return CARDS[k].sc; const cc=cfCat(k); return cc ? cc.set.id : ""; }
 function cfHoloCat(c){ const k=keyForCatalogCard(c.id); return k ? cfHoloKey(k) : cfRarHolo(c.rarity); }
 function cfAltCat(c){ const k=keyForCatalogCard(c.id); return k ? cfAltKey(k) : cfRarAlt(c.rarity); }
 // "graded" depends on the search: a PSA copy someone nearby has, or a card that comes in PSA grades at all
@@ -43,19 +43,21 @@ function cfPass(f,o){
 // run: re-runs the search. o.sets: set ids to offer (default: every set). o.noSealed: why Sealed is off here. o.gradedTip: what Graded means here
 function cfBar(ctx,run,o={}){
   CF_RUN[ctx]=run; CF_OPT[ctx]=o;
-  if(CAT.state==="idle" || CAT.state==="loading") catLoad(()=>{ cfRefresh(ctx); if(CF_RUN[ctx]) CF_RUN[ctx](); });
+  if(GM.game==="mtg"){ if(MTG.state==="idle" || MTG.state==="loading") mtgLoad(()=>{ cfRefresh(ctx); if(CF_RUN[ctx]) CF_RUN[ctx](); }); }
+  else if(CAT.state==="idle" || CAT.state==="loading") catLoad(()=>{ cfRefresh(ctx); if(CF_RUN[ctx]) CF_RUN[ctx](); });
   return `<div class="cfbar" id="cf-${ctx}" role="group" aria-label="Filters">${cfBarInner(ctx)}</div>`;
 }
 function cfBarInner(ctx){
-  const f=cfState(ctx), o=CF_OPT[ctx]||{};
-  const sel = CAT.state==="ready"
+  const f=cfState(ctx), o=CF_OPT[ctx]||{}, mtg=GM.game==="mtg", st=mtg?MTG.state:CAT.state;
+  const sel = st==="ready"
     ? `<select class="dbsel cf-set${f.set!=="all"?" on":""}" aria-label="Set" onchange="cfSet('${ctx}',this.value)">${cfSetOptions(f.set,o.sets)}</select>`
-    : `<select class="dbsel cf-set" aria-label="Set" disabled><option>${CAT.state==="error"?"Sets unavailable":"Loading sets…"}</option></select>`;
-  const chip = x => { const off = x==="sealed" && o.noSealed, tip = off ? o.noSealed : x==="graded" ? o.gradedTip : "";
-    return `<button class="chip${f[x]?" on":""}" aria-pressed="${!!f[x]}"${off?" disabled":""}${tip?` title="${esc(tip)}"`:""} onclick="cfToggle('${ctx}','${x}')">${CF_LABEL[x]}</button>`; };
+    : `<select class="dbsel cf-set" aria-label="Set" disabled><option>${st==="error"?"Sets unavailable":"Loading sets…"}</option></select>`;
+  const chip = x => { const off = (x==="sealed" && o.noSealed) || (x==="graded" && mtg), tip = x==="sealed"&&o.noSealed ? o.noSealed : x==="graded" ? (mtg?"Card Kingdom doesn't sell graded cards":o.gradedTip) : "";
+    return `<button class="chip${f[x]?" on":""}" aria-pressed="${!!f[x]}"${off?" disabled":""}${tip?` title="${esc(tip)}"`:""} onclick="cfToggle('${ctx}','${x}')">${x==="holo"&&mtg?"Foil":CF_LABEL[x]}</button>`; };
   return sel + CF_KEYS.map(chip).join("") + (cfActive(f)?`<button class="link" onclick="cfClear('${ctx}')">Clear</button>`:"");
 }
 function cfSetOptions(cur,ids){
+  if(GM.game==="mtg") return mtgSetOptions(cur,ids);
   if(!ids) return dbSetOptions(cur);
   const list=[...new Set(ids.concat(cur!=="all"?[cur]:[]))].map(id=>CAT.setById[id]).filter(Boolean).sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:0);
   return `<option value="all">All sets</option>` + list.map(s=>`<option value="${esc(s.id)}"${cur===s.id?" selected":""}>${esc(s.name)} (${s.year})</option>`).join("");

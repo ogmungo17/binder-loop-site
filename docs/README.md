@@ -41,17 +41,34 @@ A few deliberate limits, given how much of the catalogue has no price at all (se
 matches items with a known price, and a sealed listing shows in Search and on your own Selling tab, but not yet in
 the general Buy feed alongside card listings.
 
-### Magic: The Gathering price database (in progress)
+### Magic: The Gathering (in progress)
 
-The **Magic** page (`js/mtg.js`) is a browsable price database for Magic singles and sealed product, using Card Kingdom's
-prices (what it sells for and what it pays on its buylist) in AUD at the same 1.43 rate as the rest of the site. Singles
-can be searched, filtered by set, rarity, type, colour, finish, price, and whether Card Kingdom has them on its buylist,
-and sorted by price, name or release date; each card's detail view lists every printing. It's a standalone price
-database, separate from the Pokémon marketplace, listings and trades.
+Every card search has a **Game** switch: Pokémon (the default) or Magic: The Gathering. Choosing Magic shows only Magic
+results, under a "Magic: The Gathering" heading, and the choice is remembered in this browser. The switch is on Search,
+the Buy feed, "List an item", "Add a card" and the trade-night card search, and Pokémon browsing never loads any Magic data.
+Magic's data (`data/mtg.js`, loaded the first time Magic is chosen) covers every paper printing and sealed product, priced from
+Card Kingdom: what it sells for and what it pays on its buylist, in US cents per finish (normal, foil, etched foil), shown in AUD
+at the same 1.43 rate as the rest of the site. The file's format is written out at the top of `js/mtg.js`.
 
-It loads `data/mtg.js` the first time the page opens; the file's format is written out at the top of `js/mtg.js`. **That
-file hasn't been built yet**, because the Card Kingdom and MTGJSON feeds couldn't be reached from where this was written,
-so the page shows "The Magic database isn't on this site yet". The page itself was tested against a synthetic
+- **Search** uses the same five filters as Pokémon: Set, Foil (in place of Holographic), Sealed, Graded (switched off, since Card
+  Kingdom doesn't sell graded cards) and Alternate art (read from Card Kingdom's variation label: borderless, extended art,
+  showcase, alternate or full art, textless). The Filters button adds rarity, card type, colour and "on the buylist", and there's a
+  buylist sort. With nothing typed it shows the 120 most valuable printings.
+- **Magic cards are ordinary marketplace cards.** A printing becomes one (key `m_...`, with a Normal / Foil / Etched foil "printing")
+  when it's listed, added to a binder or want list, or held by a sample collector, so buying, selling, offers and want-list matching
+  work as they do for Pokémon. Magic values keep their cents and asking prices move in 5 cent steps. They're saved in this browser,
+  so a binder, offer or listing loads without the big data file, and refreshed from it when it does load. Sealed Magic products can
+  be listed too.
+- **Trades stay inside one game**: a swap or three-way loop never mixes a Pokémon card with a Magic one. The binder has a game filter
+  and Magic cards carry an "MTG" tag wherever they appear next to Pokémon.
+- **Sample holdings** (`MTG_SEED` in `js/mtg.js`) give the sample collectors, stores and demo profiles Magic binders, want lists and
+  listings, by card name. Each name gets a real current printing and its Card Kingdom price, and a name the data doesn't have is
+  skipped. They're added to a profile once, on its first Magic visit; "Reset demo data" puts them back.
+- Price history isn't shown for Magic (Card Kingdom's feed is a single day's prices), and only printings Card Kingdom prices can be
+  listed, added or used as wants.
+
+**`data/mtg.js` hasn't been built yet**, because the Card Kingdom and MTGJSON feeds couldn't be reached from where this was written.
+Until it exists, choosing Magic shows "The Magic database isn't on this site yet". The Magic code was tested against a synthetic
 110,000-card dataset (not included). Don't merge this to the live site until the real data file is in.
 
 ### Card filters
@@ -140,7 +157,7 @@ Edition run but no Shadowless print offer Unlimited and 1st Edition only; everyt
 | `js/app.js` | Sample data, core logic and the marketplace views |
 | `js/db.js` | Catalogue loading (`CAT`, `SEAL`) and its lookup/search helpers |
 | `js/market-search.js` | Search, the "list an item" flow, and turning a catalogue pick into a real listing |
-| `js/mtg.js` | The Magic price database page (needs `data/mtg.js`, not built yet) |
+| `js/mtg.js` | Magic: The Gathering: the game switch, Magic search, Magic printings as marketplace cards, sample holdings (needs `data/mtg.js`, not built yet) |
 | `data/catalog.js` | Every English card and set, loaded on demand |
 | `data/sealed.js` | Sealed products with prices, loaded on demand |
 | `js/boot.js` | Starts the app once everything has loaded |

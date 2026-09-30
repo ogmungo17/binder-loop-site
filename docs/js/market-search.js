@@ -24,6 +24,7 @@ function isVintagePrint(c){
 }
 function variantsFor(k){
   const c=CARDS[k];
+  if(c.game==="mtg") return mtgVariantsOf(c);
   if(isVintagePrint(c)){
     const holo=c.rar==="Holo rare";
     if(c.cid){
@@ -49,7 +50,7 @@ let CUSTOM_CARDS = {};
 (function loadCustomCards(){
   try{
     const s = JSON.parse(localStorage.getItem(CUSTOM_KEY)||"null");
-    if(s && typeof s==="object") Object.keys(s).forEach(k=>{ if(k.indexOf("c_")===0 && s[k] && s[k].cid) CUSTOM_CARDS[k]=s[k]; });
+    if(s && typeof s==="object") Object.keys(s).forEach(k=>{ const e=s[k]; if(e && ((k.indexOf("c_")===0 && e.cid) || (k.indexOf("m_")===0 && e.game==="mtg" && e.mid && Array.isArray(e.usd)))) CUSTOM_CARDS[k]=e; });
   }catch(e){}
   Object.assign(CARDS, CUSTOM_CARDS);
 })();
@@ -77,23 +78,30 @@ let SEALSELL = {items:{}, sold:[]};
   try{
     const s = JSON.parse(localStorage.getItem(SEAL_KEY)||"null");
     if(s && typeof s==="object"){
-      if(s.items && typeof s.items==="object") Object.keys(s.items).forEach(t=>{ if(SEAL.byTid.has(Number(t))) SEALSELL.items[t]=s.items[t]; });
+      if(s.items && typeof s.items==="object") Object.keys(s.items).forEach(t=>{ if(Number(t)<0 ? s.items[t].snap : SEAL.byTid.has(Number(t))) SEALSELL.items[t]=s.items[t]; });
       if(Array.isArray(s.sold)) SEALSELL.sold=s.sold;
     }
   }catch(e){}
 })();
 function saveSealSell(){ try{ localStorage.setItem(SEAL_KEY, JSON.stringify(SEALSELL)); }catch(e){} }
-const mySealedTids = ()=>Object.keys(SEALSELL.items).map(Number).filter(t=>SEAL.byTid.has(t));
+// a sealed product by key: Pokémon keys are TCGplayer ids; a Magic product's key is minus its id, and its listing keeps a copy of what it needs to show
+function sealOf(tid){
+  if(tid>0) return SEAL.byTid.get(tid);
+  const it=SEALSELL.items[tid], x=MTG.sealedById.get(-tid);
+  if(x) return {tid, game:"mtg", name:x.name, set:x.set?x.set.name:"", kind:x.kind, aud:x.price?mtgAud(x.price):""};
+  return it && it.snap ? Object.assign({tid, game:"mtg"}, it.snap) : undefined;
+}
+const mySealedTids = ()=>Object.keys(SEALSELL.items).map(Number).filter(t=>sealOf(t));
 let SLD={tid:null,qty:1,price:null};
 function openListSealed(tid){
-  const x=SEAL.byTid.get(tid); if(!x) return;
+  const x=sealOf(tid); if(!x) return;
   const cur=SEALSELL.items[tid];
   SLD={tid, qty:cur?cur.qty:1, price:cur?cur.ask:(x.aud!==""?x.aud:1)};
   renderListSealedModal();
 }
 function sldSet(patch){ Object.assign(SLD,patch); renderListSealedModal(); }
 function renderListSealedModal(){
-  const x=SEAL.byTid.get(SLD.tid); if(!x) return;
+  const x=sealOf(SLD.tid); if(!x) return;
   const editing=!!SEALSELL.items[SLD.tid];
   openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left">
     <h2>${editing?"Edit your listing":"List "+esc(x.name)}</h2><p class="muted">${esc(x.set||"No set")}${x.set?" · ":""}${esc(x.kind)}</p>
@@ -104,13 +112,13 @@ function renderListSealedModal(){
       ${editing?`<button class="btn danger" onclick="unlistSealed(${SLD.tid})">Take it off sale</button>`:`<button class="btn" onclick="closeModal()">Cancel</button>`}</div></div>`,{label:"List sealed product"});
 }
 function confirmListSealed(){
-  const was=!!SEALSELL.items[SLD.tid], name=SEAL.byTid.get(SLD.tid).name;
-  SEALSELL.items[SLD.tid]={qty:SLD.qty,ask:SLD.price}; saveSealSell(); closeModal(); render();
+  const was=!!SEALSELL.items[SLD.tid], x=sealOf(SLD.tid), name=x.name;
+  SEALSELL.items[SLD.tid]={qty:SLD.qty,ask:SLD.price}; if(SLD.tid<0) SEALSELL.items[SLD.tid].snap={name:x.name,set:x.set,kind:x.kind,aud:x.aud}; saveSealSell(); closeModal(); render();
   toast((was?"Updated. ":"Listed. ")+name+" for "+money(SLD.price)+(SLD.qty>1?" each":"")+".");
 }
-function unlistSealed(tid){ const name=SEAL.byTid.get(tid).name; delete SEALSELL.items[tid]; saveSealSell(); closeModal(); render(); toast(name+" is off sale."); }
+function unlistSealed(tid){ const name=sealOf(tid).name; delete SEALSELL.items[tid]; saveSealSell(); closeModal(); render(); toast(name+" is off sale."); }
 function markSealedSold(tid){
-  const it=SEALSELL.items[tid], x=SEAL.byTid.get(tid); if(!it||!x) return;
+  const it=SEALSELL.items[tid], x=sealOf(tid); if(!it||!x) return;
   SEALSELL.sold.unshift({tid,name:x.name,price:it.ask,qty:it.qty,t:Date.now()});
   delete SEALSELL.items[tid]; saveSealSell(); render(); toast("Marked "+x.name+" as sold for "+money(it.ask)+".");
 }
@@ -161,6 +169,7 @@ function pvContinue(){
 }
 function psRank(name, words){ const n=name.toLowerCase(), phrase=words.join(" "); return n===phrase?0:n.startsWith(phrase)?1:n.startsWith(words[0])?2:3; }
 function psQuery(q){
+  if(GM.game==="mtg") return mtgPsQuery(q);
   const box=document.getElementById("ps-res"); if(!box) return;
   const words=q.trim().toLowerCase().split(/\s+/).filter(Boolean), f=cfState("list");
   psOwned();
@@ -183,7 +192,7 @@ function psQuery(q){
 // the "Your binder" picks in the list modal, narrowed by the same filters (Graded here means your copy is graded)
 function psOwned(){
   const box=document.getElementById("ps-own"); if(!box) return;
-  const f=cfState("list"), owned=Object.keys(me.cards).filter(k=>cfPass(f,cfKeyItem(k,k=>/^psa/.test(me.vars[k]||""))))
+  const f=cfState("list"), owned=Object.keys(me.cards).filter(k=>gameOf(k)===GM.game&&cfPass(f,cfKeyItem(k,k=>/^psa/.test(me.vars[k]||""))))
     .sort((a,b)=>buyersFor(b).length-buyersFor(a).length||valOf(b,me.vars[b])-valOf(a,me.vars[a]));
   box.innerHTML = !Object.keys(me.cards).length ? "" : `<h3 class="sub">Your binder</h3>` + (owned.length?`<div class="pickgrid" style="margin-top:10px">${owned.map(k=>{ const on=me.cards[k]==="sell", n=buyersFor(k).length;
     return `<button class="pickc" onclick="openListCard('${k}')"><span class="fw big">${faceOf(k,me)}</span><b>${CARDS[k].n}</b><span>${on?"Listed at "+money(askOf(k)):n?plural(n,"buyer")+" looking":money(valOf(k,me.vars[k]))}</span></button>`; }).join("")}</div>`
@@ -192,6 +201,7 @@ function psOwned(){
 
 /* ---------- Search tab: spans every card and every sealed product ---------- */
 function searchResults(){
+  if(GM.game==="mtg") return mtgSearchResults();
   const words=F2.q.trim().toLowerCase().split(/\s+/).filter(Boolean), f=cfState("search");
   const filtersActive = F2.sort!=="name" || F2.type!=="All" || cfActive(f) || F2.min!==""||F2.max!==""||F2.stock;
   const out=[];
@@ -246,7 +256,9 @@ function searchSealedRow(x){
   return `<tr onclick="openSealedModal(${x.tid})"><td><span class="tcell"><span class="fw sm"><div class="cf sm" style="--h:${hashHue(x.name)}"><span class="cf-art">${ic("tag",16)}</span></div></span><span><b>${esc(x.name)}</b><em>${esc(x.kind)}</em></span></span></td><td>${esc(x.set||"No set")}</td><td></td><td class="num">${x.aud!==""?money(x.aud):"No price"}</td><td class="num">–</td><td class="num">–</td><td></td></tr>`;
 }
 function searchPage(){
-  if(CAT.state!=="ready"){
+  const mtg=GM.game==="mtg";
+  if(mtg && MTG.state!=="ready") return mtgGate(pageHead("Magic: The Gathering","Every card printing and sealed product, priced from Card Kingdom.")+gameSwitch());
+  if(!mtg && CAT.state!=="ready"){
     if(CAT.state==="error") return pageHead("Search","Every card and sealed product, with prices where we have them.") +
       emptyBox("Couldn't load the catalogue","The file data/catalog.js wasn't found. Keep the data folder next to index.html, and serve the site over http if your browser blocks local files.",`<button class="btn primary" onclick="dbRetryCatalog()">Try again</button>`);
     catLoad(()=>render());
@@ -257,42 +269,45 @@ function searchPage(){
   const tile=h=>h.kind==="card"?(()=>{ const k=h.k, c=CARDS[k], [own,sale,trade]=community(k); return `<button class="tile" onclick="openCard('${k}')"><span class="tile-art tilt">${cardFace(k)}<span class="sticker">${money(c.v)}</span></span>
       <span class="tile-b"><b>${esc(c.n)}</b><span class="tile-s">${c.dex?"#"+String(c.dex).padStart(3,"0")+", ":""}${esc(c.s)}</span>
       <span class="tile-t">${holoChip(k)}<span class="tag">${sale} selling</span><span class="tag">${trade} trading</span>${me.wants.includes(k)?`<span class="tag want">On your want list</span>`:""}</span></span></button>`; })()
-    : h.kind==="catcard" ? searchCatTile(h.c) : searchSealedTile(h.x);
+    : h.kind==="mcard" ? mtgTile(h.c) : h.kind==="mseal" ? mtgSealTile(h.x) : h.kind==="catcard" ? searchCatTile(h.c) : searchSealedTile(h.x);
   const row=h=>h.kind==="card"?(()=>{ const k=h.k, c=CARDS[k], [own,sale,trade]=community(k); return `<tr onclick="openCard('${k}')"><td><span class="tcell"><span class="fw sm">${cardFace(k,{sm:true})}</span><span><b>${esc(c.n)}</b><em>${c.dex?"#"+String(c.dex).padStart(3,"0"):""}</em></span></span></td><td>${esc(c.s)}</td><td>${holoChip(k)}</td><td class="num">${money(c.v)}</td><td class="num">${sale}</td><td class="num">${trade}</td><td>${me.wants.includes(k)?`<span class="tag want">Wanted</span>`:`<button class="btn sm" onclick="event.stopPropagation();toggleWant('${k}')">Add to want list</button>`}</td></tr>`; })()
-    : h.kind==="catcard" ? searchCatRow(h.c) : searchSealedRow(h.x);
-  return pageHead("Search","Every card and sealed product, with prices where we have them.")
-  + `<div class="bigsearch">${ic("search",20)}<input id="sq" placeholder="Charizard, Evolving Skies box, 143" autocomplete="off" value="${esc(F2.q)}" aria-label="Search cards and sealed product" oninput="F2.q=this.value;F2.limit=24;render()"></div>
+    : h.kind==="mcard" ? mtgRow(h.c) : h.kind==="mseal" ? mtgSealRow(h.x) : h.kind==="catcard" ? searchCatRow(h.c) : searchSealedRow(h.x);
+  return (mtg?pageHead("Magic: The Gathering","Every card printing and sealed product, priced from Card Kingdom."):pageHead("Search","Every card and sealed product, with prices where we have them."))
+  + gameSwitch() + `<div class="bigsearch">${ic("search",20)}<input id="sq" placeholder="${mtg?"Lightning Bolt, Modern Horizons 3, borderless, 142":"Charizard, Evolving Skies box, 143"}" autocomplete="off" value="${esc(F2.q)}" aria-label="Search cards and sealed product" oninput="F2.q=this.value;F2.limit=24;render()"></div>
     ${cfBar("search",()=>{ F2.limit=24; render(); },{gradedTip:"Cards someone nearby has in a PSA grade"})}
-    <div class="rbar"><h2>${plural(hits.length,"result")}</h2>
+    <div class="rbar"><h2>${hits.length.toLocaleString()} ${hits.length===1?"result":"results"}</h2>
       <div class="rbar-r">
         <div class="fwrap"><button class="btn fbtn${act.length?" has":""}" aria-expanded="${!!F2.open}" aria-haspopup="dialog" onclick="toggleFilters()">${ic("filter",16)}Filters${act.length?`<i class="fcount">${act.length}</i>`:""}</button>${F2.open?filterPop(hits.length):""}</div>
-        <label class="sel">Sort<select onchange="F2.sort=this.value;F2.limit=24;render()" aria-label="Sort results">${SORTS.map(([v,l])=>`<option value="${v}"${F2.sort===v?" selected":""}>${l}</option>`).join("")}</select></label>
+        <label class="sel">Sort<select onchange="F2.sort=this.value;F2.limit=24;render()" aria-label="Sort results">${(mtg?[...SORTS,["buy","Buylist, high to low"]]:SORTS).map(([v,l])=>`<option value="${v}"${F2.sort===v?" selected":""}>${l}</option>`).join("")}</select></label>
         <div class="viewt" role="group" aria-label="View"><button class="${F2.view==="grid"?"on":""}" aria-pressed="${F2.view==="grid"}" onclick="F2.view='grid';render()" aria-label="Grid view">${ic("grid",17)}</button><button class="${F2.view==="table"?"on":""}" aria-pressed="${F2.view==="table"}" onclick="F2.view='table';render()" aria-label="Table view">${ic("list",17)}</button></div></div></div>
-    ${act.length?`<div class="actf">${act.map(([id,l])=>`<button class="chip on" onclick="clearFilter('${id}')" aria-label="Remove filter: ${esc(l)}">${esc(l)}${ic("x",13)}</button>`).join("")}<button class="link" onclick="cfReset('search');setF2({type:'All',stock:false,min:'',max:''})">Clear all</button></div>`:""}
+    ${act.length?`<div class="actf">${act.map(([id,l])=>`<button class="chip on" onclick="clearFilter('${id}')" aria-label="Remove filter: ${esc(l)}">${esc(l)}${ic("x",13)}</button>`).join("")}<button class="link" onclick="cfReset('search');mxReset();setF2({type:'All',stock:false,min:'',max:''})">Clear all</button></div>`:""}
     ${!hits.length?emptyBox("Nothing matches","Try different words, or remove a filter."):F2.view==="grid"?`<div class="tiles">${shown.map(tile).join("")}</div>`
-      :`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Item</th><th>Set</th><th></th><th class="num">Price</th><th class="num">Selling</th><th class="num">Trading</th><th></th></tr></thead><tbody>${shown.map(row).join("")}</tbody></table></div>`}
-    ${hits.length>F2.limit?`<div class="more-w"><span class="muted">Showing ${F2.limit} of ${hits.length}</span><button class="btn" onclick="F2.limit+=24;render()">Show 24 more</button></div>`:""}`;
+      :`<div class="tbl-wrap"><table class="tbl">${mtg?`<thead><tr><th>Item</th><th>Set</th><th>Rarity</th><th class="num">Normal</th><th class="num">Foil</th><th class="num">Buylist</th></tr></thead>`:`<thead><tr><th>Item</th><th>Set</th><th></th><th class="num">Price</th><th class="num">Selling</th><th class="num">Trading</th><th></th></tr></thead>`}<tbody>${shown.map(row).join("")}</tbody></table></div>`}
+    ${hits.length>F2.limit?`<div class="more-w"><span class="muted">Showing ${F2.limit.toLocaleString()} of ${hits.length.toLocaleString()}</span><button class="btn" onclick="F2.limit+=24;render()">Show 24 more</button></div>`:""}`;
 }
 function searchActiveFilters(){
+  if(GM.game==="mtg") return mtgActiveFilters();
   const f=cfState("search");
   return [F2.type!=="All"&&["type",F2.type], f.set!=="all"&&CAT.setById[f.set]&&["cf:set",CAT.setById[f.set].name],
     ...CF_KEYS.map(x=>f[x]&&["cf:"+x,CF_LABEL[x]]), F2.stock&&["stock","Available to trade or buy"],
     (F2.min!==""||F2.max!=="")&&["price",F2.min!==""&&F2.max!==""?`${money(+F2.min)} to ${money(+F2.max)}`:F2.min!==""?`${money(+F2.min)} and up`:`Up to ${money(+F2.max)}`]].filter(Boolean);
 }
-function clearFilter(id){ if(id.indexOf("cf:")===0){ const x=id.slice(3), f=cfState("search"); if(x==="set") f.set="all"; else f[x]=false; setF2({}); return; } setF2(id==="type"?{type:"All"}:id==="set"?{set:"all"}:id==="kind"?{kind:"all"}:id==="price"?{min:"",max:""}:{[id]:false}); }
+function clearFilter(id){ if(GM.game==="mtg") return mtgClearFilter(id); if(id.indexOf("cf:")===0){ const x=id.slice(3), f=cfState("search"); if(x==="set") f.set="all"; else f[x]=false; setF2({}); return; } setF2(id==="type"?{type:"All"}:id==="set"?{set:"all"}:id==="kind"?{kind:"all"}:id==="price"?{min:"",max:""}:{[id]:false}); }
 function filterPop(n){
+  if(GM.game==="mtg") return mtgFilterPop(n);
   const sw=(on,label,fn)=>`<button class="fsw${on?" on":""}" role="switch" aria-checked="${on}" onclick="${fn}"><span>${label}</span><i></i></button>`;
   return `<div class="fpop" role="dialog" aria-label="Filters">
     <div class="fpop-h"><h3>Filters</h3><button class="icon-btn sm" onclick="toggleFilters(false)" aria-label="Close filters">${ic("x",15)}</button></div>
     <p class="muted" style="font-size:13px;margin:0 0 4px">Set, holographic, sealed, graded and alternate art are in the bar under the search box.</p>
     ${!cfState("search").sealed?`<h4>Type</h4><div class="chips-l">${TYPES.map(t=>`<button class="chip${F2.type===t?" on":""}" aria-pressed="${F2.type===t}" onclick="setF2({type:'${t}'})">${t}</button>`).join("")}</div>`:""}
     <h4>Show only</h4>${sw(F2.stock,"Someone has one to trade or sell","setF2({stock:!F2.stock})")}
-    <h4>Price</h4><div class="range"><input type="number" min="0" placeholder="Min" aria-label="Minimum price" value="${esc(F2.min)}" onchange="setF2({min:this.value})"><span>to</span><input type="number" min="0" placeholder="Max" aria-label="Maximum price" value="${esc(F2.max)}" onchange="setF2({max:this.value})"></div>
-    <div class="fpop-f"><button class="link" onclick="cfReset('search');setF2({type:'All',stock:false,min:'',max:''})">Clear all</button><button class="btn primary" onclick="toggleFilters(false)">Show ${plural(n,"result")}</button></div></div>`;
+    <h4>Price</h4><div class="range"><input type="number" min="0" placeholder="Min" aria-label="Minimum price" value="${esc(F2.min)}" onchange="setF2({min:this.value},1)"><span>to</span><input type="number" min="0" placeholder="Max" aria-label="Maximum price" value="${esc(F2.max)}" onchange="setF2({max:this.value},1)"></div>
+    <div class="fpop-f"><button class="link" onclick="cfReset('search');mxReset();setF2({type:'All',stock:false,min:'',max:''})">Clear all</button><button class="btn primary" onclick="toggleFilters(false)">Show ${plural(n,"result")}</button></div></div>`;
 }
 
 /* ---------- "Add a card" (binder, not for sale) now searches the whole catalogue too ---------- */
 function openAddCard(q){
+  if(GM.game==="mtg") return mtgAddCard(q);
   if(CAT.state!=="ready"){
     if(CAT.state!=="error") catLoad(()=>{ const m=$("#modal"); if(m && m.classList.contains("on")) openAddCard(); });
     openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left"><h2>Add a card</h2>
@@ -307,13 +322,13 @@ function openAddCard(q){
     hits.sort((a,b)=>psRank(a.name,words)-psRank(b.name,words)||a.name.length-b.name.length);
     hits=hits.slice(0,8);
   }
-  openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left"><h2>Add a card</h2><p class="muted">Search any card, then add it to your binder or your want list.</p>
+  openModal(`<button class="x" onclick="closeModal()" aria-label="Close">${ic("x")}</button><div class="mdl-c" style="text-align:left"><h2>Add a card</h2>${gameSwitch()}<p class="muted">Search any card, then add it to your binder or your want list.</p>
     <div class="bigsearch" style="margin:14px 0"><input id="aq" data-autofocus placeholder="Search by name, set or Pokédex number" autocomplete="off" value="${esc(addQ)}" oninput="addQ=this.value;openAddCard()" aria-label="Search cards"></div>
     ${cfBar("add",()=>openAddCard(),{noSealed:"Only cards go in a binder or want list",gradedTip:"Cards that come in PSA grades"})}
     ${hits.map(c=>{ const key=keyForCatalogCard(c.id), price=key?money(valOf(key,variantsFor(key)[0].id)):"No price yet";
       return `<div class="prow static"><span class="fw sm">${key?cardFace(key,{sm:true}):`<div class="cf sm" style="--h:${CAT.typeHue[c.type]||hashHue(c.name)}"><span class="cf-art"><i>${esc((c.name[0]||"?").toUpperCase())}</i></span></div>`}</span><span><b>${esc(c.name)}</b><em>${esc(c.set.name)}</em></span><span class="val">${price}</span>
       <button class="btn sm" onclick="addCatalogCard('${c.id}')">Add to binder</button><button class="btn sm" onclick="wantCatalogCard('${c.id}')">Add to want list</button></div>`; }).join("")||(words.length||cfActive(f)?`<p class="muted">Nothing matches that${cfActive(f)?". Try clearing a filter":""}.</p>`:"")}</div>`,{label:"Add a card"});
-  const n=$("#aq"); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); }
+  MODAL_KIND="add"; const n=$("#aq"); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); }
 }
 function addCatalogCard(id){
   const key=keyForCatalogCard(id);
@@ -333,8 +348,8 @@ function sealedSellSection(){
   if(!tids.length && !SEALSELL.sold.length) return "";
   return `<div class="rbar" style="margin-top:26px"><h2>Sealed product for sale</h2></div>
     ${tids.length?`<div class="tbl-wrap"><table class="tbl sellt"><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Asking each</th><th class="num">Total</th><th></th></tr></thead><tbody>
-      ${tids.map(tid=>{ const x=SEAL.byTid.get(tid), it=SEALSELL.items[tid];
-        return `<tr><td><button class="tcell" onclick="openSealedModal(${tid})"><span class="fw sm"><div class="cf sm" style="--h:${hashHue(x.name)}"><span class="cf-art">${ic("tag",16)}</span></div></span><span><b>${esc(x.name)}</b><em>${esc(x.kind)}</em></span></button></td>
+      ${tids.map(tid=>{ const x=sealOf(tid), it=SEALSELL.items[tid];
+        return `<tr><td><button class="tcell" onclick="${tid<0?`openMtgSealed(${(MTG.sealedById.get(-tid)||{i:-1}).i})`:`openSealedModal(${tid})`}"><span class="fw sm"><div class="cf sm" style="--h:${hashHue(x.name)}"><span class="cf-art">${ic("tag",16)}</span></div></span><span><b>${esc(x.name)}</b><em>${esc(x.kind)}</em></span></button></td>
         <td class="num">${it.qty}</td><td class="num"><span class="sticker sm">${money(it.ask)}</span></td><td class="num">${money(it.ask*it.qty)}</td>
         <td class="acts"><button class="btn sm" onclick="openListSealed(${tid})">Edit</button><button class="btn sm" onclick="markSealedSold(${tid})">Mark as sold</button></td></tr>`; }).join("")}</tbody></table></div>`
       :emptyBox("No sealed product listed yet","Search for a booster box, ETB or other sealed product above to list it.")}
