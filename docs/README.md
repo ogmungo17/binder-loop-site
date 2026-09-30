@@ -88,6 +88,8 @@ loaded data takes about 140 MB of browser memory. What went into it:
 - **Printings** are every paper printing MTGJSON lists, one row per set and collector number (the two faces of a double-faced, split
   or adventure card are one row). Online-only cards are left out, and so are tokens, emblems and art cards, which Card Kingdom sells
   but which aren't printings of a card. A printing Card Kingdom doesn't list is still in the file, with no price.
+- **Upcoming sets** are in the file too: seven Magic sets have a release date after the build date (Reality Fracture, Star Trek and
+  others), and Card Kingdom prices most of their cards for pre-order. The front page's "Newest sets" menu only lists sets already out.
 - **Prices** are matched to a printing by the Card Kingdom ids MTGJSON records for its normal, foil and etched finishes. Out-of-stock
   cards keep their price.
 - **The buylist** price is kept only while Card Kingdom's quantity wanted is above 0. Its feed carries a buy price for nearly every

@@ -47,7 +47,8 @@ function lpFillSets(g){
   const fill=()=>{
     const ul=document.querySelector(`.lp-sets[data-g="${g}"]`); if(!ul) return;
     const sets=g==="mtg" ? (MTG.state==="ready"?MTG.sets.filter(s=>s.n).map(s=>({id:s.code,name:s.name,year:s.year,date:s.date})):[]) : (CAT.state==="ready"?CAT.sets.map(s=>({id:s.id,name:s.name,year:s.year,date:s.date})):[]);
-    const top=sets.sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:0).slice(0,6);
+    const today=new Date().toISOString().slice(0,10);   // sets announced but not out yet aren't "newest"
+    const top=sets.filter(s=>s.date<=today).sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:0).slice(0,6);
     ul.innerHTML=top.map(s=>`<li><button onclick="lpShop('${g}',{set:'${esc(s.id)}'})">${esc(s.name)}<em>${s.year||""}</em></button></li>`).join("");
     ul.previousElementSibling.hidden=!top.length;
   };
