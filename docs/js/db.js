@@ -98,7 +98,7 @@ function catLoad(cb){
   const fail = () => { CAT.state = "error"; dbRerender(); };
   const add = (src, ok, bad) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => { s.remove(); bad(); }; document.head.appendChild(s); };
   // cards first; the sealed list is optional, so the page still works without it
-  add("data/catalog.js", () => { if(!window.__CATALOG) return fail(); const go = () => catInit(window.__CATALOG); if(window.__SEALED) go(); else add("data/sealed.js", go, go); }, fail);
+  add("data/catalog.js?v="+(window.BL_V||""), () => { if(!window.__CATALOG) return fail(); const go = () => catInit(window.__CATALOG); if(window.__SEALED) go(); else add("data/sealed.js?v="+(window.BL_V||""), go, go); }, fail);
 }
 function dbRerender(){ if(typeof S!=="undefined" && S.view==="app" && S.page==="db") render(); }
 function dbRetryCatalog(){ CAT.state = "idle"; render(); }

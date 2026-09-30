@@ -14,6 +14,9 @@ python3 -m http.server 8080      # then visit http://localhost:8080
 
 ## Deploy it
 
+After changing any file, bump the version number in `index.html` (`window.BL_V` and every `?v=` on the CSS and
+script links) so browsers pick up the new files on a normal refresh instead of showing a cached copy.
+
 Upload the folder to any static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages, S3).
 Routing is hash-based (`#/app/market/listings`), so no rewrite rules are needed.
 The `database/` and `tools/` folders are not needed on the live site; leave them out if you like.
