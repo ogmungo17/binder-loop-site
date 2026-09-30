@@ -54,13 +54,13 @@ above them. Everything is live sample data, and nothing from a game's catalogue 
 is chosen (Pokémon's set list loads the first time its menu opens). The marketing sections from before (how it works, features,
 trade nights, stores, questions) carry on below the rows.
 
-### Magic: The Gathering (in progress)
+### Magic: The Gathering
 
 Every card search has a **Game** switch: Pokémon (the default) or Magic: The Gathering. Choosing Magic shows only Magic
 results, under a "Magic: The Gathering" heading, and the choice is remembered in this browser. The switch is on Search,
 the Buy feed, "List an item", "Add a card" and the trade-night card search, and Pokémon browsing never loads any Magic data.
-Magic's data (`data/mtg.js`, loaded the first time Magic is chosen) covers every paper printing and sealed product, priced from
-Card Kingdom: what it sells for and what it pays on its buylist, in US cents per finish (normal, foil, etched foil), shown in AUD
+Magic's data (`data/mtg.js`, loaded the first time Magic is chosen) covers every paper printing and the sealed product Card Kingdom
+lists, priced from Card Kingdom: what it sells for and what it pays on its buylist, in US cents per finish (normal, foil, etched foil), shown in AUD
 at the same 1.43 rate as the rest of the site. The file's format is written out at the top of `js/mtg.js`.
 
 - **Search** uses the same five filters as Pokémon: Set, Foil (in place of Holographic), Sealed, Graded (switched off, since Card
@@ -80,9 +80,31 @@ at the same 1.43 rate as the rest of the site. The file's format is written out 
 - Price history isn't shown for Magic (Card Kingdom's feed is a single day's prices), and only printings Card Kingdom prices can be
   listed, added or used as wants.
 
-**`data/mtg.js` hasn't been built yet**, because the Card Kingdom and MTGJSON feeds couldn't be reached from where this was written.
-Until it exists, choosing Magic shows "The Magic database isn't on this site yet". The Magic code was tested against a synthetic
-110,000-card dataset (not included). Don't merge this to the live site until the real data file is in.
+**`data/mtg.js`** is built from Card Kingdom's price lists (its singles list and its sealed list, `api.cardkingdom.com`) and MTGJSON
+(`mtgjson.com`, for sets, cards and sealed product). This build has **102,924 printings in 702 sets** (96,107 with a Card Kingdom
+price) and **2,128 sealed products**, with prices as of 2026-09-30, and is 5.3 MB. Served locally it loads in about a second, and the
+loaded data takes about 140 MB of browser memory. What went into it:
+
+- **Printings** are every paper printing MTGJSON lists, one row per set and collector number (the two faces of a double-faced, split
+  or adventure card are one row). Online-only cards are left out, and so are tokens, emblems and art cards, which Card Kingdom sells
+  but which aren't printings of a card. A printing Card Kingdom doesn't list is still in the file, with no price.
+- **Prices** are matched to a printing by the Card Kingdom ids MTGJSON records for its normal, foil and etched finishes. Out-of-stock
+  cards keep their price.
+- **The buylist** price is kept only while Card Kingdom's quantity wanted is above 0. Its feed carries a buy price for nearly every
+  card, but with a quantity of 0 for the ones it isn't buying, and those aren't offers. About 79,000 finishes are on the buylist.
+- **Variations** (Borderless, Extended Art, Showcase...) are Card Kingdom's own labels for a printing, which is what the Alternate art
+  filter reads. A printing Card Kingdom doesn't list has no label, so the filter can't find it.
+- **Sealed product** is every product on Card Kingdom's sealed list. Each gets a set from MTGJSON's product record (or by matching
+  Card Kingdom's edition name) and a kind from its name. Products only MTGJSON knows about aren't included, since they have no
+  stable id or price.
+- **Not matched:** about 320 Card Kingdom singles rows aren't on any printing, mostly its 222 "Promo Pack" rows, which carry no
+  Scryfall id and which MTGJSON gives no Card Kingdom id.
+
+To rebuild it (the prices are a single day's, so this is how they're refreshed), run `bash tools/fetch-mtg.sh`. It downloads the three
+sources (about 250 MB), runs `tools/build_mtg.py`, then `tools/check_mtg.py`, which checks the file against the sources: the
+printings against MTGJSON one to one, every price against Card Kingdom's row for the same Scryfall id and finish (a different route
+from the one the build takes), every sealed product against Card Kingdom's list, and a few well-known cards by eye. It needs about
+6 GB of memory and takes a few minutes. After a rebuild, bump the version in `index.html`.
 
 ### Card filters
 
@@ -171,11 +193,12 @@ Edition run but no Shadowless print offer Unlimited and 1st Edition only; everyt
 | `js/db.js` | Catalogue loading (`CAT`, `SEAL`) and its lookup/search helpers |
 | `js/market-search.js` | Search, the "list an item" flow, and turning a catalogue pick into a real listing |
 | `js/home.js` | The front page: game tabs and menus, the banner carousel, and the collectors, deals and most-wanted rows |
-| `js/mtg.js` | Magic: The Gathering: the game switch, Magic search, Magic printings as marketplace cards, sample holdings (needs `data/mtg.js`, not built yet) |
+| `js/mtg.js` | Magic: The Gathering: the game switch, Magic search, Magic printings as marketplace cards, sample holdings (needs `data/mtg.js`) |
 | `data/catalog.js` | Every English card and set, loaded on demand |
 | `data/sealed.js` | Sealed products with prices, loaded on demand |
+| `data/mtg.js` | Every Magic printing and Card Kingdom sealed product with Card Kingdom prices, loaded the first time Magic is chosen |
 | `js/boot.js` | Starts the app once everything has loaded |
-| `database/`, `tools/` | Standalone data export and the scripts that build it (not needed on the live site) |
+| `database/`, `tools/` | Standalone data export and the scripts that build it, including `fetch-mtg.sh`, `build_mtg.py` and `check_mtg.py` for `data/mtg.js` (not needed on the live site) |
 
 ## Demo profiles
 
