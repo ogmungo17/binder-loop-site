@@ -870,9 +870,9 @@ try{ const t=localStorage.getItem("binderloop.web.theme"); if(t) document.docume
 const isDark = ()=>{ const t=document.documentElement.getAttribute("data-theme"); return t?t==="dark":!!(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches); };
 
 /* ---------- router ---------- */
-const PAGES=["home","market","social","search","db","you"];
-const TABS={market:["listings","selling","leads","trades","messages"],social:["nights","people","stores"],you:["profile","binder"]};
-const S={view:"landing",page:"home",tab:null,sel:null,last:{market:"listings",social:"nights",you:"profile"}};
+const PAGES=["home","market","social","search","mtg","db","you"];
+const TABS={market:["listings","selling","leads","trades","messages"],social:["nights","people","stores"],mtg:["singles","sealed"],you:["profile","binder"]};
+const S={view:"landing",page:"home",tab:null,sel:null,last:{market:"listings",social:"nights",mtg:"singles",you:"profile"}};
 const hashOf2 = ()=>S.view==="landing"?"#/":"#/app/"+[S.page,S.tab,S.sel].filter(x=>x!=null&&x!=="").map(x=>encodeURIComponent(x)).join("/");
 function parseHash(){
   let h=""; try{ h=(location.hash||"").replace(/^#\/?/,""); }catch(e){}
@@ -903,11 +903,11 @@ function render(top){
   if(fid){ const n=document.getElementById(fid); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(e){} } }
   window.scrollTo(0,top?0:y);
   const log=$("#chatlog"); if(log) log.scrollTop=log.scrollHeight;
-  document.title = S.view==="landing" ? "Binder Loop: buy, sell and trade Pokémon cards near you" : "Binder Loop / "+({home:"Home",market:"Marketplace",social:"Social",search:"Search",db:"Database",you:"You"})[S.page];
+  document.title = S.view==="landing" ? "Binder Loop: buy, sell and trade Pokémon cards near you" : "Binder Loop / "+({home:"Home",market:"Marketplace",social:"Social",search:"Search",mtg:"Magic",db:"Database",you:"You"})[S.page];
 }
 
 /* ---------- app shell ---------- */
-const NAV=[["home","Home","home"],["market","Marketplace","market"],["social","Social","social"],["search","Search","search"],["db","Database","db"],["you","You","you"]];
+const NAV=[["home","Home","home"],["market","Marketplace","market"],["social","Social","social"],["search","Search","search"],["mtg","Magic","grid"],["db","Database","db"],["you","You","you"]];
 function navBadge(p){
   if(p==="market"){ const n=OFFERS.filter(needsMe).length; return n?`<span class="badge" title="Offers waiting for your reply">${n}</span>`:""; }
   if(p==="social"){ const n=allNights().filter(x=>nightPlan(x.key).going===true).length; return n?`<span class="badge soft" title="Nights you're going to">${n}</span>`:""; }
@@ -940,7 +940,7 @@ function appShell(){
 }
 function globalSearch(v){ F2.q=(v||"").trim(); F2.limit=24; go("search"); const g=$("#gs"); if(g) g.value=""; }
 function pageHTML(){
-  return ({home:homePage,market:marketPage,social:socialPage,search:searchPage,db:dbPage,you:youPage})[S.page]();
+  return ({home:homePage,market:marketPage,social:socialPage,search:searchPage,mtg:mtgPage,db:dbPage,you:youPage})[S.page]();
 }
 function pageHead(title,sub,actions){
   return `<div class="ph"><div><h1>${title}</h1>${sub?`<p>${sub}</p>`:""}</div>${actions?`<div class="ph-actions">${actions}</div>`:""}</div>`;

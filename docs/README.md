@@ -41,6 +41,19 @@ A few deliberate limits, given how much of the catalogue has no price at all (se
 matches items with a known price, and a sealed listing shows in Search and on your own Selling tab, but not yet in
 the general Buy feed alongside card listings.
 
+### Magic: The Gathering price database (in progress)
+
+The **Magic** page (`js/mtg.js`) is a browsable price database for Magic singles and sealed product, using Card Kingdom's
+prices (what it sells for and what it pays on its buylist) in AUD at the same 1.43 rate as the rest of the site. Singles
+can be searched, filtered by set, rarity, type, colour, finish, price, and whether Card Kingdom has them on its buylist,
+and sorted by price, name or release date; each card's detail view lists every printing. It's a standalone price
+database, separate from the Pokémon marketplace, listings and trades.
+
+It loads `data/mtg.js` the first time the page opens; the file's format is written out at the top of `js/mtg.js`. **That
+file hasn't been built yet**, because the Card Kingdom and MTGJSON feeds couldn't be reached from where this was written,
+so the page shows "The Magic database isn't on this site yet". The page itself was tested against a synthetic
+110,000-card dataset (not included). Don't merge this to the live site until the real data file is in.
+
 ### Card filters
 
 Every card search has the same filter bar, in `js/card-filters.js`: **Set**, **Holographic**, **Sealed**, **Graded** and
@@ -127,6 +140,7 @@ Edition run but no Shadowless print offer Unlimited and 1st Edition only; everyt
 | `js/app.js` | Sample data, core logic and the marketplace views |
 | `js/db.js` | Catalogue loading (`CAT`, `SEAL`) and its lookup/search helpers |
 | `js/market-search.js` | Search, the "list an item" flow, and turning a catalogue pick into a real listing |
+| `js/mtg.js` | The Magic price database page (needs `data/mtg.js`, not built yet) |
 | `data/catalog.js` | Every English card and set, loaded on demand |
 | `data/sealed.js` | Sealed products with prices, loaded on demand |
 | `js/boot.js` | Starts the app once everything has loaded |
